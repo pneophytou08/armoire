@@ -1,0 +1,2751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+html, body { background: #1E3329 !important; }
+.splash-group {
+  position: fixed;
+  inset: 0;
+  background: #1E3329;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 9999;
+  animation: splashGroupOut 0.7s ease 2.6s forwards;
+  pointer-events: none;
+}
+@keyframes splashGroupOut {
+  from { opacity: 1; }
+  to   { opacity: 0; pointer-events: none; }
+}
+.splash-wordmark {
+  display: flex;
+  align-items: baseline;
+  font-family: 'Cormorant', Georgia, serif;
+  font-style: italic;
+  font-weight: 300;
+  font-size: 64px;
+  letter-spacing: 8px;
+  color: #C4A876;
+  user-select: none;
+}
+.splash-wordmark {
+  opacity: 0;
+  animation: splashWordIn 1.2s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+}
+@keyframes splashWordIn {
+  0%   { opacity: 0; transform: translateY(10px); }
+  60%  { opacity: 1; transform: translateY(-1px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.splash-line {
+  height: 1px;
+  background: #C4A876;
+  width: 0;
+  opacity: 0;
+  animation: splashLineGrow 0.8s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+}
+@keyframes splashLineGrow {
+  0%   { width: 0;     opacity: 0; }
+  30%  { opacity: 0.35; }
+  100% { width: 180px; opacity: 0.35; }
+}
+</style>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Armoire</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Armoire">
+<meta name="theme-color" content="#1E3329">
+<link rel="apple-touch-icon" href="data:image/png;base64,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">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #2C4A3E;
+  --ink-dark: #1E3329;
+  --paper: #FFFFFF;
+  --warm: #F2F7F4;
+  --border: #D4E2DB;
+  --mid: #6B8F7E;
+  --dim: #A3BFB4;
+  --gold: #9B7E4E;
+  --gold-light: #C4A876;
+  --green: #3D6B52;
+  --red: #8B3A2F;
+  --card: #FFFFFF;
+}
+
+body {
+  font-family: 'Jost', sans-serif;
+  background: #FFFFFF;
+  color: var(--ink);
+  min-height: 100vh;
+  font-weight: 300;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── APP HIDDEN UNTIL SPLASH DONE ── */
+header, main, .bottom-nav {
+  opacity: 0;
+  animation: appContentIn 0.5s ease 2.5s forwards;
+}
+@keyframes appContentIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── HEADER ── */
+header {
+  background: #1E3329;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-family: 'Cormorant', serif;
+  font-size: 26px;
+  font-weight: 300;
+  letter-spacing: 4px;
+  color: var(--gold-light);
+  font-style: italic;
+}
+.logo em { color: var(--gold-light); font-style: italic; }
+
+/* ── BOTTOM NAV ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 64px;
+  background: #1E3329;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  z-index: 100;
+  border-top: 1px solid #163026;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  padding: 8px 20px;
+  color: var(--dim);
+  transition: color 0.2s;
+  font-family: 'Jost', sans-serif;
+}
+
+.nav-btn .nav-icon { line-height: 1; display:flex; align-items:center; justify-content:center; }
+.nav-btn .nav-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; }
+.nav-btn.active { color: var(--gold-light); }
+
+/* ── MAIN ── */
+main {
+  padding: 24px 16px 88px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.view { display: none; }
+.view.active { display: block; }
+
+/* ── PAGE HEADER ── */
+.page-head { margin-bottom: 24px; }
+.page-head h1 {
+  font-family: 'Cormorant', serif;
+  font-size: 36px;
+  font-weight: 300;
+  line-height: 1;
+  margin-bottom: 4px;
+  color: #C4A876;
+  letter-spacing: 3px;
+}
+.page-head p { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--mid); }
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+
+.filter-btn {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--border);
+  color: var(--mid);
+  font-family: 'Jost', sans-serif;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.filter-btn.active { background: #1E3329; border-color: var(--ink); color: var(--gold-light); }
+
+/* ── WARDROBE GRID ── */
+.wardrobe-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+@media (min-width: 500px) {
+  .wardrobe-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+.item-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  border-radius: 2px;
+}
+
+.item-card.selected { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold); }
+
+.sel-badge {
+  position: absolute;
+  top: 7px; right: 7px;
+  width: 20px; height: 20px;
+  background: var(--gold);
+  border-radius: 50%;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 10px;
+  z-index: 3;
+}
+.item-card.selected .sel-badge { display: flex; }
+
+.item-photo {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+  background: var(--warm);
+}
+
+.item-placeholder {
+  width: 100%;
+  height: 160px;
+  background: var(--warm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+}
+
+.edit-item-btn {
+  position: absolute;
+  bottom: 52px; left: 6px;
+  background: rgba(26,23,20,0.75);
+  color: var(--paper);
+  border: none;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.item-card:hover .edit-item-btn,
+.item-card:active .edit-item-btn { opacity: 1; }
+@media (hover: none) {
+  .edit-item-btn { opacity: 1; }
+}
+
+.edit-photo-btn {
+  position: absolute;
+  bottom: 52px; right: 6px;
+  background: rgba(26,23,20,0.75);
+  color: var(--gold-light);
+  border: none;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.item-card:hover .edit-photo-btn,
+.item-card:active .edit-photo-btn { opacity: 1; }
+
+/* always show on touch */
+@media (hover: none) {
+  .edit-photo-btn { opacity: 1; }
+}
+
+.delete-item-btn {
+  position: absolute;
+  top: 7px; left: 7px;
+  background: rgba(26,23,20,0.75);
+  color: var(--gold-light);
+  border: none;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  font-size: 11px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  opacity: 0;
+  transition: opacity 0.2s;
+  line-height: 1;
+}
+.item-card:hover .delete-item-btn,
+.item-card:active .delete-item-btn { opacity: 1; }
+
+@media (hover: none) {
+  .delete-item-btn { opacity: 1; }
+}
+
+.item-info { padding: 10px 10px 12px; border-top: 1px solid var(--border); }
+.item-cat { font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); font-weight: 500; margin-bottom: 2px; }
+.item-name { font-family: 'Cormorant', serif; font-size: 14px; font-weight: 400; line-height: 1.2; margin-bottom: 4px; }
+.item-tags { display: flex; gap: 3px; flex-wrap: wrap; }
+.item-tag { font-size: 8px; letter-spacing: 1px; text-transform: uppercase; padding: 1px 5px; border: 1px solid var(--border); color: var(--mid); }
+
+.add-card {
+  background: none;
+  border: 1px dashed var(--border);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--dim);
+  transition: all 0.2s;
+  font-family: 'Jost', sans-serif;
+  border-radius: 2px;
+  min-height: 210px;
+}
+.add-card:active { border-color: var(--gold); color: var(--gold); }
+.add-card .plus { font-size: 26px; font-weight: 200; }
+.add-card span { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; }
+
+/* ── BUILDER ── */
+.builder-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Visual outfit preview */
+.outfit-visual {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.outfit-visual-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.outfit-visual-header h3 {
+  font-family: 'Cormorant', serif;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.score-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  font-size: 11px;
+}
+
+.score-pill .num { font-family: 'Cormorant', serif; font-size: 18px; font-weight: 400; }
+.score-pill.high { border-color: var(--green); color: var(--green); }
+.score-pill.mid { border-color: var(--gold); color: var(--gold); }
+.score-pill.low { border-color: var(--red); color: var(--red); }
+
+.outfit-flat-lay {
+  padding: 16px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  min-height: 120px;
+}
+
+.flat-lay-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.flat-lay-img {
+  object-fit: cover;
+  border: 1px solid var(--border);
+  background: var(--warm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flat-lay-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.flat-lay-label {
+  font-size: 8px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--dim);
+  text-align: center;
+}
+
+.flat-lay-top { width: 90px; height: 110px; }
+.flat-lay-trousers { width: 80px; height: 120px; }
+.flat-lay-shoes { width: 70px; height: 70px; border-radius: 2px; }
+.flat-lay-sm { width: 55px; height: 55px; }
+
+.outfit-empty {
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--dim);
+  font-size: 12px;
+  line-height: 1.8;
+}
+
+.outfit-score-detail {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  display: none;
+}
+.outfit-score-detail.visible { display: block; }
+
+.score-bars { display: flex; flex-direction: column; gap: 7px; margin-bottom: 10px; }
+.score-bar-row { display: flex; align-items: center; gap: 8px; }
+.score-bar-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--mid); width: 72px; flex-shrink: 0; }
+.score-bar-track { flex: 1; height: 3px; background: var(--warm); border-radius: 2px; overflow: hidden; }
+.score-bar-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.5s ease; }
+.score-bar-val { font-size: 10px; color: var(--mid); width: 22px; text-align: right; }
+
+.styling-note {
+  font-size: 11px;
+  color: var(--mid);
+  line-height: 1.7;
+  padding: 10px 12px;
+  background: var(--warm);
+  border-left: 2px solid var(--gold-light);
+  font-style: italic;
+}
+
+.outfit-actions {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Category selector */
+.cat-section { margin-bottom: 20px; }
+.cat-label {
+  font-size: 9px; letter-spacing: 3px; text-transform: uppercase;
+  color: var(--mid); font-weight: 400; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.cat-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.scroll-row {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: none;
+}
+.scroll-row::-webkit-scrollbar { display: none; }
+
+.mini-card {
+  flex-shrink: 0;
+  width: 110px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  border-radius: 2px;
+}
+.mini-card.active { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold); }
+
+.mini-card .sel-badge { position: absolute; top: 5px; right: 5px; width: 16px; height: 16px; background: var(--gold); border-radius: 50%; display: none; align-items: center; justify-content: center; color: white; font-size: 8px; z-index: 2; }
+.mini-card.active .sel-badge { display: flex; }
+
+.mini-photo { width: 100%; aspect-ratio: 1; object-fit: cover; background: var(--warm); display: block; }
+.mini-placeholder { width: 100%; aspect-ratio: 1; background: var(--warm); display: flex; align-items: center; justify-content: center; font-size: 26px; }
+.mini-info { padding: 7px 8px 9px; border-top: 1px solid var(--border); }
+.mini-name { font-family: 'Cormorant', serif; font-size: 12px; line-height: 1.2; }
+
+/* ── BUTTONS ── */
+.btn-primary {
+  background: #1E3329; color: var(--gold-light); border: none;
+  padding: 14px; font-family: 'Jost', sans-serif; font-size: 10px;
+  font-weight: 400; letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; transition: background 0.2s; width: 100%; border-radius: 1px;
+}
+.btn-primary:active { background: var(--gold); }
+
+.btn-secondary {
+  background: none; color: var(--mid); border: 1px solid var(--border);
+  padding: 12px; font-family: 'Jost', sans-serif; font-size: 10px;
+  font-weight: 400; letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s; width: 100%; border-radius: 1px;
+}
+.btn-secondary:active { border-color: var(--ink); color: var(--ink); }
+
+.btn-surprise {
+  background: var(--warm); color: var(--gold); border: 1px solid var(--gold-light);
+  padding: 12px; font-family: 'Jost', sans-serif; font-size: 10px;
+  font-weight: 400; letter-spacing: 2px; text-transform: uppercase;
+  cursor: pointer; transition: all 0.2s; width: 100%; border-radius: 1px;
+}
+.btn-surprise:active { background: var(--gold); color: var(--gold-light); }
+
+/* ── SAVED ── */
+.saved-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.saved-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.saved-cover {
+  width: 100%;
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  display: block;
+  background: var(--warm);
+}
+
+.saved-cover-placeholder {
+  width: 100%;
+  aspect-ratio: 3/4;
+  background: var(--warm);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+}
+
+.saved-cover-placeholder .thumb {
+  width: 44px;
+  height: 44px;
+  background: var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  overflow: hidden;
+}
+
+.saved-cover-placeholder .thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+.saved-info { padding: 10px 12px 12px; border-top: 1px solid var(--border); }
+.saved-name { font-family: 'Cormorant', serif; font-size: 16px; font-weight: 400; margin-bottom: 2px; }
+.saved-score { font-size: 10px; font-weight: 500; margin-bottom: 6px; }
+.saved-score.high { color: var(--green); }
+.saved-score.mid { color: var(--gold); }
+.saved-score.low { color: var(--red); }
+.saved-pieces { font-size: 10px; color: var(--dim); line-height: 1.6; margin-bottom: 8px; }
+.saved-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; }
+.saved-tag { font-size: 8px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 6px; border: 1px solid var(--border); color: var(--mid); }
+.saved-foot { display: flex; justify-content: space-between; align-items: center; }
+.saved-date { font-size: 9px; color: var(--dim); letter-spacing: 1px; }
+.del-btn { background: none; border: none; font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--dim); cursor: pointer; padding: 0; font-family: 'Jost', sans-serif; }
+.del-btn:active { color: var(--red); }
+
+/* ── HISTORY ── */
+.history-row {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 8px;
+  border-radius: 2px;
+}
+.history-date { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--mid); width: 56px; flex-shrink: 0; line-height: 1.4; }
+.history-name { font-family: 'Cormorant', serif; font-size: 17px; font-weight: 400; }
+.history-pieces { font-size: 10px; color: var(--dim); }
+.history-score { font-size: 11px; font-weight: 500; margin-left: auto; flex-shrink: 0; }
+.history-score.high { color: var(--green); }
+.history-score.mid { color: var(--gold); }
+.history-score.low { color: var(--red); }
+
+/* ── MODAL ── */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(26,23,20,0.7);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: #FFFFFF;
+  border: 1px solid var(--border);
+  border-bottom: none;
+  width: 100%;
+  max-width: 600px;
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-head {
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: #FFFFFF;
+  z-index: 1;
+}
+
+.modal-head h3 { font-family: 'Cormorant', serif; font-size: 20px; font-weight: 400; }
+.modal-close { background: none; border: none; font-size: 26px; cursor: pointer; color: var(--mid); line-height: 1; padding: 4px; }
+.modal-body { padding: 20px; }
+
+label {
+  display: block;
+  font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--mid); font-weight: 400; margin-bottom: 6px;
+}
+
+input, select {
+  width: 100%; border: 1px solid var(--border); padding: 11px 13px;
+  font-family: 'Jost', sans-serif; font-size: 14px; color: var(--ink);
+  background: var(--card); outline: none; transition: border-color 0.2s;
+  border-radius: 0; appearance: none; margin-bottom: 16px;
+  -webkit-appearance: none;
+}
+input:focus, select:focus { border-color: var(--gold); }
+
+.checkbox-group { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+.checkbox-btn {
+  border: 1px solid var(--border); padding: 7px 14px;
+  font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase;
+  cursor: pointer; background: none; color: var(--mid);
+  font-family: 'Jost', sans-serif; transition: all 0.15s; border-radius: 1px;
+}
+.checkbox-btn.active { background: #1E3329; border-color: var(--ink); color: var(--gold-light); }
+
+.upload-area {
+  border: 1px dashed var(--border); padding: 20px; text-align: center;
+  cursor: pointer; transition: all 0.2s; color: var(--mid);
+  position: relative; overflow: hidden; margin-bottom: 16px; border-radius: 2px;
+}
+.upload-area:active { border-color: var(--gold); color: var(--gold); }
+.upload-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; margin: 0; padding: 0; height: 100%; font-size: 0; }
+.upload-area p { font-size: 12px; letter-spacing: 0.5px; pointer-events: none; }
+.upload-preview { width: 100%; max-height: 160px; object-fit: cover; display: none; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 2px; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 80px; left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: #1E3329; color: var(--gold-light);
+  padding: 10px 20px; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+  opacity: 0; transition: all 0.3s; z-index: 300; pointer-events: none;
+  white-space: nowrap; border-radius: 2px;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+.empty-state {
+  text-align: center; padding: 48px 20px; color: var(--dim);
+}
+.empty-state .icon { font-size: 36px; margin-bottom: 12px; opacity: 0.5; }
+.empty-state h3 { font-family: 'Cormorant', serif; font-size: 24px; font-weight: 300; color: var(--mid); margin-bottom: 6px; }
+.empty-state p { font-size: 11px; letter-spacing: 0.5px; line-height: 1.8; }
+</style>
+</head>
+<body style="background:#1E3329">
+
+<div class="splash-group" id="splash-screen">
+  <div class="splash-line"></div>
+  <div class="splash-wordmark">
+    armoire
+  </div>
+  <div class="splash-line"></div>
+</div>
+
+<header>
+  <button onclick="openModal('modal-settings');updateStorageMeter()" style="position:absolute;right:16px;background:none;border:none;color:#C4A876;cursor:pointer;padding:8px;line-height:1;display:flex;align-items:center">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+  </button>
+  <div class="logo">armoire</div>
+</header>
+
+<main>
+
+  <!-- WARDROBE -->
+  <div class="view active" id="view-wardrobe">
+    <div class="page-head">
+      <h1>Wardrobe</h1>
+      <p>Your complete catalog</p>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:8px">
+      <div style="font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);flex:1" id="wardrobe-active-filter">All Items</div>
+      <button onclick="openModal('modal-add')" style="background:none;border:1px solid var(--border);padding:7px 14px;cursor:pointer;display:flex;align-items:center;gap:6px;font-family:Jost,sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);border-radius:2px;white-space:nowrap;transition:all 0.2s">
+        Add New +
+      </button>
+      <button onclick="toggleWardrobeFilters()" id="wardrobe-filter-toggle" style="background:none;border:1px solid var(--border);padding:7px 12px;cursor:pointer;display:flex;align-items:center;gap:7px;font-family:Jost,sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);border-radius:2px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        Filter
+      </button>
+    </div>
+    <div id="wardrobe-filters" style="display:none;flex-direction:column;margin-bottom:16px">
+      <div class="filter-bar" style="flex-wrap:wrap" id="wardrobe-filter-btns"></div>
+    </div>
+    <div class="wardrobe-grid" id="wardrobe-grid"></div>
+  </div>
+
+  <!-- BUILDER -->
+  <div class="view" id="view-curate">
+    <div class="page-head">
+      <h1>Curate</h1>
+      <p>Compose your look</p>
+    </div>
+    <div class="builder-layout">
+
+      <!-- Visual Outfit Preview -->
+      <div class="outfit-visual">
+        <div class="outfit-visual-header" style="flex-direction:column;align-items:flex-start;gap:6px">
+          <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+            <h3>Today's Look</h3>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div id="weather-widget" style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mid)"></div>
+              <div class="score-pill" id="score-pill" style="display:none">
+                <span class="num" id="score-num">—</span>
+                <span id="score-label-text">/ 100</span>
+              </div>
+            </div>
+          </div>
+          <div id="weather-quip" style="font-size:11px;color:var(--mid);font-style:italic;letter-spacing:0.3px;display:none"></div>
+        </div>
+        <div id="outfit-flat-lay" class="outfit-flat-lay">
+          <div class="outfit-empty">Select pieces below to build your outfit</div>
+        </div>
+        <div class="outfit-score-detail" id="score-detail">
+          <div class="score-bars" id="score-bars"></div>
+          <div class="styling-note" id="styling-note"></div>
+        </div>
+        <div class="outfit-actions">
+          <div style="margin-bottom:14px">
+            <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--mid);margin-bottom:10px">What's your vibe?</div>
+            <input type="text" id="vibe-input" placeholder="e.g. summer rooftop dinner, low key Saturday..." style="margin-bottom:8px;font-size:12px;padding:10px 12px">
+            <button onclick="toggleVibeCriteria()" id="vibe-criteria-toggle" style="background:none;border:none;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);cursor:pointer;font-family:Jost,sans-serif;padding:0;margin-bottom:8px;display:flex;align-items:center;gap:4px">
+              <span id="vibe-criteria-label">occasion ›</span>
+            </button>
+            <div style="display:none;flex-wrap:wrap;gap:6px;margin-bottom:10px" id="vibe-criteria">
+              <button class="checkbox-btn" onclick="setVibeCriteria('Casual', this)">Casual</button>
+              <button class="checkbox-btn" onclick="setVibeCriteria('Smart Casual', this)">Smart Casual</button>
+              <button class="checkbox-btn" onclick="setVibeCriteria('Office', this)">Office</button>
+              <button class="checkbox-btn" onclick="setVibeCriteria('Evening', this)">Evening</button>
+              <button class="checkbox-btn" onclick="setVibeCriteria('Weekend', this)">Weekend</button>
+            </div>
+            <button class="btn-primary" onclick="vibeGenerate()" style="font-size:10px">Cook</button>
+          </div>
+
+          <div style="border-top:1px solid var(--border);padding-top:14px">
+            <button class="btn-surprise" onclick="surpriseMe()">✦ Surprise Me</button>
+          </div>
+          <button class="btn-primary" onclick="saveOutfit()">Save This Outfit</button>
+          <button class="btn-secondary" onclick="clearOutfit()">Clear</button>
+        </div>
+      </div>
+
+      <!-- Category Selectors -->
+      <div id="builder-cats"></div>
+
+    </div>
+  </div>
+
+  <!-- LOOKS (merged saved + history) -->
+  <div class="view" id="view-looks">
+    <div class="page-head">
+      <h1>Looks</h1>
+      <p>Your saved outfits</p>
+    </div>
+    <div id="looks-filters">
+      <!-- Top level filters -->
+      <div class="filter-bar" style="margin-bottom:8px">
+        <button class="filter-btn active" onclick="filterLooks('all', this)" id="filter-all">All</button>
+        <button class="filter-btn" onclick="filterLooks('favorites', this)" id="filter-fav">★ Favorites</button>
+        <button class="filter-btn" onclick="toggleSubFilter('season')" id="filter-season-toggle">Season ›</button>
+        <button class="filter-btn" onclick="toggleSubFilter('occasion')" id="filter-occ-toggle">Occasion ›</button>
+      </div>
+      <!-- Season sub-filters -->
+      <div class="filter-bar" id="sub-season" style="display:none;margin-bottom:8px;padding-left:8px;border-left:2px solid var(--green)">
+        <button class="filter-btn" onclick="filterLooks('Spring', this)">Spring</button>
+        <button class="filter-btn" onclick="filterLooks('Summer', this)">Summer</button>
+        <button class="filter-btn" onclick="filterLooks('Fall', this)">Fall</button>
+        <button class="filter-btn" onclick="filterLooks('Winter', this)">Winter</button>
+      </div>
+      <!-- Occasion sub-filters -->
+      <div class="filter-bar" id="sub-occasion" style="display:none;margin-bottom:8px;padding-left:8px;border-left:2px solid var(--gold)">
+        <button class="filter-btn" onclick="filterLooks('Casual', this)">Casual</button>
+        <button class="filter-btn" onclick="filterLooks('Smart Casual', this)">Smart Casual</button>
+        <button class="filter-btn" onclick="filterLooks('Office', this)">Office</button>
+        <button class="filter-btn" onclick="filterLooks('Evening', this)">Evening</button>
+        <button class="filter-btn" onclick="filterLooks('Weekend', this)">Weekend</button>
+      </div>
+    </div>
+    <div class="saved-grid" id="looks-grid"></div>
+  </div>
+
+</main>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="showView('wardrobe', this)">
+    <span class="nav-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.38 3.46L16 2a4 4 0 0 1-8 0L3.62 3.46a2 2 0 0 0-1.34 2.23l.58 3.57a1 1 0 0 0 .99.84H6v10a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V10h2.15a1 1 0 0 0 .99-.84l.58-3.57a2 2 0 0 0-1.34-2.23z"/></svg></span>
+    <span class="nav-label">Wardrobe</span>
+  </button>
+  <button class="nav-btn" onclick="showView('curate', this)">
+    <span class="nav-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+    <span class="nav-label">Curate</span>
+  </button>
+  <button class="nav-btn" onclick="showView('looks', this)">
+    <span class="nav-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg></span>
+    <span class="nav-label">Looks</span>
+  </button>
+</nav>
+
+<!-- ADD ITEM MODAL -->
+<div class="modal-overlay" id="modal-add">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Add New Item</h3>
+      <button class="modal-close" onclick="closeModal('modal-add')">×</button>
+    </div>
+    <div class="modal-body">
+      <label>Category</label>
+      <select id="new-cat">
+        <option value="Top">Top</option>
+        <option value="Bottoms">Bottoms (trousers, shorts, jeans...)</option>
+        <option value="Shoes">Shoes</option>
+        <option value="Belt">Belt</option>
+        <option value="Watch">Watch</option>
+        <option value="Hat">Hat</option>
+        <option value="Socks">Socks</option>
+        <option value="Jackets & Outerwear">Jackets & Outerwear</option>
+      </select>
+      <label>Item Name</label>
+      <input type="text" id="new-name" placeholder="e.g. White Stripe Dress Shirt">
+      <label>Description</label>
+      <input type="text" id="new-desc" placeholder="e.g. Cotton, slim fit">
+      <label>Color Family</label>
+      <select id="new-color">
+        <option value="white">White / Cream</option>
+        <option value="black">Black</option>
+        <option value="navy">Navy / Dark Blue</option>
+        <option value="blue">Blue</option>
+        <option value="grey">Grey</option>
+        <option value="beige">Beige / Tan / Oat</option>
+        <option value="brown">Brown / Chocolate</option>
+        <option value="green">Green / Olive</option>
+        <option value="pink">Pink / Blush</option>
+        <option value="red">Red / Burgundy</option>
+        <option value="pattern">Pattern / Stripe</option>
+      </select>
+      <label>Formality</label>
+      <select id="new-formality">
+        <option value="1">1 — Very Casual</option>
+        <option value="2">2 — Casual</option>
+        <option value="3" selected>3 — Smart Casual</option>
+        <option value="4">4 — Office / Smart</option>
+        <option value="5">5 — Formal</option>
+      </select>
+      <label>Occasions</label>
+      <div class="checkbox-group" id="occ-checkboxes">
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Casual</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Smart Casual</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Office</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Evening</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Weekend</button>
+      </div>
+      <label>Flat Lay Photo</label>
+      <img id="add-upload-preview" class="upload-preview" alt="Preview">
+      <div class="upload-area">
+        <input type="file" accept="image/*" onchange="previewUpload('add', this)">
+        <p>Tap to upload photo</p>
+      </div>
+      <button id="analyze-btn" onclick="analyzePhoto()" style="width:100%;padding:11px;background:none;border:1px solid var(--gold);color:var(--gold);font-family:Jost,sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:1px;margin-bottom:4px;display:none">✦ Analyze Photo with AI</button>
+      <div id="analyze-status" style="font-size:11px;color:var(--mid);font-style:italic;margin-bottom:12px;display:none"></div>
+      <label>Or paste image URL</label>
+      <input type="text" id="new-url" placeholder="https://...">
+      <button class="btn-primary" onclick="addItem()">Add to Wardrobe</button>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- SAVE OUTFIT MODAL -->
+<div class="modal-overlay" id="modal-save">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Save Outfit</h3>
+      <button class="modal-close" onclick="closeModal('modal-save')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <label style="margin-bottom:0">Outfit Name</label>
+        <button onclick="regenerateName()" style="background:none;border:none;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);cursor:pointer;font-family:Jost,sans-serif;padding:0">↻ New Name</button>
+      </div>
+      <input type="text" id="outfit-name" placeholder="e.g. Sunday Brunch, Office Monday...">
+      <label>Occasions</label>
+      <div class="checkbox-group" id="save-occ-checkboxes">
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Casual</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Smart Casual</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Office</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Evening</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Weekend</button>
+      </div>
+      <label>Season</label>
+      <div class="checkbox-group" id="save-season-checkboxes">
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Spring</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Summer</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Fall</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Winter</button>
+      </div>
+      <label>Notes (optional)</label>
+      <input type="text" id="outfit-notes" placeholder="e.g. Great for a dinner out, avoid rainy days...">
+      <label>Photo of you wearing this outfit (optional)</label>
+      <img id="outfit-photo-preview" class="upload-preview" alt="Outfit photo">
+      <div class="upload-area">
+        <input type="file" accept="image/*" onchange="previewUpload('outfit', this)">
+        <p>Upload a photo of you in this outfit</p>
+      </div>
+      <label>Mark as worn today?</label>
+      <select id="worn-today">
+        <option value="yes">Yes — add to history</option>
+        <option value="no">No — just save it</option>
+      </select>
+      <button class="btn-primary" onclick="confirmSave()">Save Outfit</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- EDIT ITEM MODAL -->
+<div class="modal-overlay" id="modal-edit-item">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Edit Item</h3>
+      <button class="modal-close" onclick="closeModal('modal-edit-item')">×</button>
+    </div>
+    <div class="modal-body">
+      <label>Category</label>
+      <select id="edit-cat">
+        <option value="Top">Top</option>
+        <option value="Bottoms">Bottoms (trousers, shorts, jeans...)</option>
+        <option value="Shoes">Shoes</option>
+        <option value="Belt">Belt</option>
+        <option value="Watch">Watch</option>
+        <option value="Hat">Hat</option>
+        <option value="Socks">Socks</option>
+        <option value="Jackets & Outerwear">Jackets & Outerwear</option>
+      </select>
+      <label>Item Name</label>
+      <input type="text" id="edit-name" placeholder="e.g. White Stripe Dress Shirt">
+      <label>Description</label>
+      <input type="text" id="edit-desc" placeholder="e.g. Cotton, slim fit">
+      <label>Color Family</label>
+      <select id="edit-color">
+        <option value="white">White / Cream</option>
+        <option value="black">Black</option>
+        <option value="navy">Navy / Dark Blue</option>
+        <option value="blue">Blue</option>
+        <option value="grey">Grey</option>
+        <option value="beige">Beige / Tan / Oat</option>
+        <option value="brown">Brown / Chocolate</option>
+        <option value="green">Green / Olive</option>
+        <option value="pink">Pink / Blush</option>
+        <option value="red">Red / Burgundy</option>
+        <option value="pattern">Pattern / Stripe</option>
+      </select>
+      <label>Formality</label>
+      <select id="edit-formality">
+        <option value="1">1 — Very Casual</option>
+        <option value="2">2 — Casual</option>
+        <option value="3">3 — Smart Casual</option>
+        <option value="4">4 — Office / Smart</option>
+        <option value="5">5 — Formal</option>
+      </select>
+      <label>Occasions</label>
+      <div class="checkbox-group" id="edit-occ-checkboxes">
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Casual</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Smart Casual</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Office</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Evening</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Weekend</button>
+      </div>
+      <label>Photo</label>
+      <img id="edit-upload-preview" class="upload-preview" alt="Preview">
+      <div class="upload-area">
+        <input type="file" accept="image/*" onchange="previewUpload('edit', this)">
+        <p>Tap to upload photo</p>
+      </div>
+      <button id="analyze-edit-btn" onclick="analyzeEditPhoto()" style="width:100%;padding:11px;background:none;border:1px solid var(--gold);color:var(--gold);font-family:Jost,sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:1px;margin-bottom:4px;display:none">✦ Analyze Photo with AI</button>
+      <div id="analyze-edit-status" style="font-size:11px;color:var(--mid);font-style:italic;margin-bottom:12px;display:none"></div>
+      <label>Or paste image URL</label>
+      <input type="text" id="edit-url" placeholder="https://...">
+      <button class="btn-primary" onclick="saveEditItem()" style="margin-bottom:10px">Save Changes</button>
+      <button onclick="deleteItem(editingItemId, event)" style="width:100%;padding:13px;background:#fff;border:1px solid #D4E2DB;color:#8B3A2F;font-family:Jost,sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:1px">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT LOOK MODAL -->
+<div class="modal-overlay" id="modal-edit-look">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Edit Look</h3>
+      <button class="modal-close" onclick="closeModal('modal-edit-look')">×</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <label style="margin-bottom:0">Name</label>
+        <button onclick="regenerateEditName()" style="background:none;border:none;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);cursor:pointer;font-family:Jost,sans-serif;padding:0">↻ New Name</button>
+      </div>
+      <input type="text" id="edit-look-name" placeholder="Outfit name">
+      <label>Occasions</label>
+      <div class="checkbox-group" id="edit-look-occ">
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Casual</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Smart Casual</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Office</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Evening</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Weekend</button>
+      </div>
+      <label>Season</label>
+      <div class="checkbox-group" id="edit-look-season">
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Spring</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Summer</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Fall</button>
+        <button class="checkbox-btn" onclick="toggleOcc(this)">Winter</button>
+      </div>
+      <label>Notes</label>
+      <input type="text" id="edit-look-notes" placeholder="e.g. Great for a dinner out...">
+      <label>Outfit photo (optional)</label>
+      <img id="edit-look-photo-preview" class="upload-preview" alt="Preview">
+      <div class="upload-area">
+        <input type="file" accept="image/*" onchange="previewUpload('editlook', this)">
+        <p>Upload a photo of you in this outfit</p>
+      </div>
+      <button class="btn-primary" onclick="saveEditLook()" style="margin-bottom:10px">Save Changes</button>
+      <button onclick="deleteLook(editingLookIdx);closeModal('modal-edit-look')" style="width:100%;padding:13px;background:#fff;border:1px solid #D4E2DB;color:#8B3A2F;font-family:Jost,sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:1px">Remove</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="modal-settings">
+  <div class="modal">
+    <div class="modal-head">
+      <h3>Settings & Backup</h3>
+      <button class="modal-close" onclick="closeModal('modal-settings')">×</button>
+    </div>
+    <div class="modal-body">
+      <div id="supabase-status-bar" style="padding:10px 12px;border-radius:2px;margin-bottom:16px;font-size:11px;letter-spacing:0.5px;display:none"></div>
+      <label>Anthropic API Key (for AI photo analysis)</label>
+      <input type="password" id="anthropic-key" placeholder="sk-ant-...">
+      <div id="anthropic-status" style="padding:8px 12px;border-radius:2px;margin-bottom:16px;font-size:11px;letter-spacing:0.5px;display:none"></div>
+      <button class="btn-primary" onclick="saveAnthropicKey()" style="margin-bottom:10px">Save AI Key</button>
+      <button onclick="analyzeAllItems()" id="analyze-all-btn" style="width:100%;padding:13px;background:none;border:1px solid var(--gold);color:var(--gold);font-family:Jost,sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:1px;margin-bottom:6px">✦ Analyze All Wardrobe Items</button>
+      <div id="analyze-all-status" style="font-size:11px;color:var(--mid);font-style:italic;margin-bottom:16px;display:none;line-height:1.7"></div>
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:16px"></div>
+      <label>Supabase Project URL</label>
+      <input type="text" id="supa-url" placeholder="https://xxxxxxxxxxxx.supabase.co" style="margin-bottom:8px">
+      <label>Supabase Publishable Key</label>
+      <input type="password" id="supa-key" placeholder="eyJ...">
+      <button class="btn-primary" onclick="saveSupabaseKeys()" style="margin-bottom:20px">Connect to Supabase</button>
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:16px"></div>
+      <label>Export backup</label>
+      <p style="font-size:12px;color:var(--mid);margin-bottom:12px;line-height:1.7">Downloads all your wardrobe data as a file. Keep it safe — you can restore from it anytime.</p>
+      <button class="btn-primary" onclick="exportData()" style="margin-bottom:20px">Download Backup File</button>
+      <label>Restore from backup</label>
+      <p style="font-size:12px;color:var(--mid);margin-bottom:12px;line-height:1.7">Select a previously exported backup file to restore your wardrobe.</p>
+      <div class="upload-area" style="margin-bottom:0">
+        <input type="file" accept=".json" onchange="importData(this)">
+        <p>Tap to select backup file</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── COLOR MAP ────────────────────────────────────────────────────────────────
+const COLOR_COMPAT = {
+  white:   { white:60, black:95, navy:95, blue:90, grey:90, beige:85, brown:80, green:80, pink:75, red:80, pattern:70 },
+  black:   { white:95, black:70, navy:80, blue:80, grey:85, beige:85, brown:75, green:75, pink:70, red:75, pattern:65 },
+  navy:    { white:95, black:80, navy:65, blue:70, grey:90, beige:90, brown:85, green:75, pink:70, red:65, pattern:75 },
+  blue:    { white:90, black:80, navy:70, blue:60, grey:85, beige:80, brown:75, green:70, pink:65, red:60, pattern:65 },
+  grey:    { white:90, black:85, navy:90, blue:85, grey:70, beige:85, brown:80, green:75, pink:70, red:70, pattern:75 },
+  beige:   { white:85, black:85, navy:90, blue:80, grey:85, beige:65, brown:80, green:80, pink:75, red:70, pattern:70 },
+  brown:   { white:80, black:75, navy:85, blue:75, grey:80, beige:80, brown:60, green:85, pink:65, red:70, pattern:65 },
+  green:   { white:80, black:75, navy:75, blue:70, grey:75, beige:80, brown:85, green:60, pink:60, red:55, pattern:60 },
+  pink:    { white:75, black:70, navy:70, blue:65, grey:70, beige:75, brown:65, green:60, pink:55, red:50, pattern:55 },
+  red:     { white:80, black:75, navy:65, blue:60, grey:70, beige:70, brown:70, green:55, pink:50, red:50, pattern:55 },
+  pattern: { white:70, black:65, navy:75, blue:65, grey:75, beige:70, brown:65, green:60, pink:55, red:55, pattern:40 },
+};
+
+const CAT_EMOJI = { Top:'👕', Bottoms:'👖', Shoes:'👟', 'Jackets & Outerwear':'🧥', Belt:'🪢', Watch:'⌚', Hat:'🎩', Socks:'🧦', Accessory:'⌚' };
+const CAT_ORDER = ['Top', 'Bottoms', 'Shoes', 'Jackets & Outerwear', 'Belt', 'Watch', 'Hat', 'Socks'];
+
+// ── DEFAULT WARDROBE ─────────────────────────────────────────────────────────
+const DEFAULT_WARDROBE = [
+  { id:1, cat:'Top', name:'White Stripe Dress Shirt', desc:'Fine stripe, long sleeve', color:'pattern', formality:4, occasions:['Smart Casual','Office','Evening'], img:null },
+  { id:2, cat:'Top', name:'Olive Green Crew Tee', desc:'Short sleeve, fitted', color:'green', formality:2, occasions:['Casual','Weekend'], img:null },
+  { id:3, cat:'Top', name:'Black V-Neck Knit', desc:'Long sleeve, slim fit', color:'black', formality:3, occasions:['Smart Casual','Office','Evening'], img:null },
+  { id:4, cat:'Top', name:'Oatmeal Knit Polo', desc:'Open collar, long sleeve', color:'beige', formality:3, occasions:['Smart Casual','Casual','Weekend'], img:null },
+  { id:5, cat:'Bottoms', name:'Oat Linen Trousers', desc:'High-rise, single pleat', color:'beige', formality:4, occasions:['Smart Casual','Office','Evening'], img:null },
+  { id:6, cat:'Bottoms', name:'Blush Ribbed Trousers', desc:'High-rise, double button', color:'pink', formality:3, occasions:['Smart Casual','Casual','Evening'], img:null },
+  { id:7, cat:'Bottoms', name:'Navy Slim Trousers', desc:'Tailored, tapered', color:'navy', formality:4, occasions:['Smart Casual','Office','Evening'], img:null },
+  { id:8, cat:'Bottoms', name:'Chocolate Pleated Trousers', desc:'Double pleat, cuffed', color:'brown', formality:4, occasions:['Smart Casual','Office','Evening'], img:null },
+  { id:9, cat:'Shoes', name:'Cognac Horsebit Loafers', desc:'Tan leather, gold bit', color:'brown', formality:4, occasions:['Smart Casual','Office','Evening'], img:null },
+  { id:10, cat:'Shoes', name:'White Minimal Sneakers', desc:'Clean white low-top', color:'white', formality:2, occasions:['Casual','Weekend','Smart Casual'], img:null },
+  { id:11, cat:'Shoes', name:'Brown Suede Loafers', desc:'Warm suede, slip-on', color:'brown', formality:3, occasions:['Smart Casual','Casual','Office'], img:null },
+  { id:12, cat:'Shoes', name:'Dark Brown Dress Loafers', desc:'Deep leather', color:'brown', formality:4, occasions:['Office','Evening','Smart Casual'], img:null },
+  { id:13, cat:'Watch', name:'Gold Watch', desc:'Warm gold tone', color:'beige', formality:3, occasions:['Smart Casual','Office','Evening','Casual'], img:null },
+];
+
+// ── STATE ────────────────────────────────────────────────────────────────────
+let wardrobe = loadData('armoire_wardrobe', DEFAULT_WARDROBE);
+let savedOutfits = loadData('armoire_saved', []);
+
+let selectedItems = {};
+let nextId = Math.max(...wardrobe.map(i => i.id), 99) + 1;
+
+let uploadedData = { add: null, edit: null, outfit: null, editlook: null };
+let editingItemId = null;
+
+// ── SUPABASE ─────────────────────────────────────────────────────────────────
+let supabaseClient = null;
+
+function initSupabase() {
+  try {
+    const url = localStorage.getItem('supa_url');
+    const key = localStorage.getItem('supa_key');
+    if (url && key) {
+      supabaseClient = window.supabase.createClient(url, key);
+      return true;
+    }
+  } catch(e) {}
+  return false;
+}
+
+function saveSupabaseKeys() {
+  const url = document.getElementById('supa-url').value.trim();
+  const key = document.getElementById('supa-key').value.trim();
+  if (!url || !key) { showToast('Please enter both fields'); return; }
+  localStorage.setItem('supa_url', url);
+  localStorage.setItem('supa_key', key);
+  const ok = initSupabase();
+  if (ok) {
+    showSupabaseStatus('Connected to Supabase ✓', true);
+    showToast('Connected to Supabase ✓');
+    syncToSupabase();
+  } else {
+    showSupabaseStatus('Connection failed — check your keys', false);
+  }
+}
+
+function showSupabaseStatus(msg, success) {
+  const bar = document.getElementById('supabase-status-bar');
+  if (!bar) return;
+  bar.style.display = 'block';
+  bar.style.background = success ? 'rgba(61,107,82,0.15)' : 'rgba(139,58,47,0.15)';
+  bar.style.border = success ? '1px solid var(--green)' : '1px solid var(--red)';
+  bar.style.color = success ? 'var(--green)' : 'var(--red)';
+  bar.textContent = msg;
+}
+
+function isSupabaseConnected() {
+  return supabaseClient !== null;
+}
+
+// ── PERSISTENCE ──────────────────────────────────────────────────────────────
+function loadData(key, fallback) {
+  try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : fallback; }
+  catch(e) { return fallback; }
+}
+
+function saveData(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch(e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) { showStorageWarning(); }
+    return false;
+  }
+}
+
+function persist() {
+  saveData('armoire_wardrobe', wardrobe);
+  saveData('armoire_saved', savedOutfits);
+  updateStorageMeter();
+  itemsSinceLastBackup++;
+  if (itemsSinceLastBackup >= 5) { itemsSinceLastBackup = 0; setTimeout(showBackupBanner, 800); }
+  // Sync to Supabase if connected
+  if (isSupabaseConnected()) syncToSupabase();
+}
+
+// ── SUPABASE SYNC ─────────────────────────────────────────────────────────────
+async function syncToSupabase() {
+  if (!supabaseClient) return;
+  try {
+    // Upsert wardrobe items (without photo data — photos handled separately)
+    const wardrobeData = wardrobe.map(item => ({
+      id: String(item.id),
+      cat: item.cat,
+      name: item.name,
+      description: item.desc || '',
+      color: item.color || '',
+      formality: item.formality || 3,
+      occasions: item.occasions || [],
+      img_url: item.img && item.img.startsWith('http') ? item.img : null,
+      has_local_img: item.img && item.img.startsWith('data:') ? true : false,
+    }));
+
+    await supabaseClient.from('wardrobe').upsert(wardrobeData, { onConflict: 'id' });
+
+    // Upsert saved outfits (without photo data)
+    const outfitData = savedOutfits.map((o, idx) => ({
+      id: String(idx),
+      name: o.name,
+      occasions: o.occasions || [],
+      seasons: o.seasons || [],
+      notes: o.notes || '',
+      score: o.score || 0,
+      date: o.date || '',
+      worn: o.worn || false,
+      favorite: o.favorite || false,
+      item_ids: o.items?.map(i => String(i.id)) || [],
+    }));
+
+    await supabaseClient.from('outfits').upsert(outfitData, { onConflict: 'id' });
+
+  } catch(e) {
+    console.log('Supabase sync error:', e.message);
+  }
+}
+
+async function uploadPhotoToSupabase(itemId, dataUrl) {
+  if (!supabaseClient || !dataUrl || !dataUrl.startsWith('data:')) return null;
+  try {
+    // Convert base64 to blob
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const path = `items/${itemId}-${Date.now()}.jpg`;
+    const { data, error } = await supabaseClient.storage.from('photos').upload(path, blob, {
+      contentType: 'image/jpeg',
+      upsert: true
+    });
+    if (error) throw error;
+    const { data: urlData } = supabaseClient.storage.from('photos').getPublicUrl(path);
+    return urlData.publicUrl;
+  } catch(e) {
+    console.log('Photo upload error:', e.message);
+    return null;
+  }
+}
+
+async function uploadOutfitPhotoToSupabase(outfitName, dataUrl) {
+  if (!supabaseClient || !dataUrl || !dataUrl.startsWith('data:')) return null;
+  try {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const path = `outfits/${outfitName.replace(/\s+/g, '-')}-${Date.now()}.jpg`;
+    const { data, error } = await supabaseClient.storage.from('photos').upload(path, blob, {
+      contentType: 'image/jpeg',
+      upsert: true
+    });
+    if (error) throw error;
+    const { data: urlData } = supabaseClient.storage.from('photos').getPublicUrl(path);
+    return urlData.publicUrl;
+  } catch(e) {
+    console.log('Outfit photo upload error:', e.message);
+    return null;
+  }
+}
+
+// ── STORAGE METER ────────────────────────────────────────────────────────────
+let itemsSinceLastBackup = 0;
+
+function updateStorageMeter() {
+  // Storage meter removed — using Supabase for photos
+}
+
+function showStorageWarning() {
+  showToast('Storage full — export a backup and remove some photos');
+}
+
+function showBackupBanner() {
+  if (document.getElementById('backup-banner')) return;
+  const b = document.createElement('div');
+  b.id = 'backup-banner';
+  b.style.cssText = 'position:fixed;top:56px;left:0;right:0;z-index:150;background:#1E3329;color:#C4A876;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-family:Jost,sans-serif;border-bottom:1px solid #163026;';
+  const msg = document.createElement('span');
+  msg.textContent = 'Back up your wardrobe';
+  const exportBtn = document.createElement('button');
+  exportBtn.textContent = 'Export';
+  exportBtn.style.cssText = 'background:#C4A876;color:#1E3329;border:none;padding:5px 12px;font-size:11px;font-family:Jost,sans-serif;cursor:pointer;margin-right:8px';
+  exportBtn.onclick = exportData;
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = 'x';
+  closeBtn.style.cssText = 'background:none;border:none;color:#C4A876;font-size:20px;cursor:pointer;line-height:1';
+  closeBtn.onclick = function() { b.remove(); };
+  const btnGroup = document.createElement('div');
+  btnGroup.style.display = 'flex';
+  btnGroup.style.alignItems = 'center';
+  btnGroup.appendChild(exportBtn);
+  btnGroup.appendChild(closeBtn);
+  b.appendChild(msg);
+  b.appendChild(btnGroup);
+  document.body.appendChild(b);
+}
+
+// ── EXPORT / IMPORT ──────────────────────────────────────────────────────────
+function exportData() {
+  const data = { version:1, exported: new Date().toISOString(), wardrobe, savedOutfits };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'armoire-backup-' + new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).replace(/[\s,]/g,'-') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup downloaded ✦');
+  const banner = document.getElementById('backup-banner');
+  if (banner) banner.remove();
+}
+
+function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.wardrobe) throw new Error('Invalid');
+      wardrobe = data.wardrobe;
+      savedOutfits = data.savedOutfits || [];
+
+      nextId = Math.max(...wardrobe.map(i => i.id), 99) + 1;
+      persist();
+      renderWardrobe();
+      closeModal('modal-settings');
+      showToast('Restored ' + wardrobe.length + ' items ✦');
+    } catch(err) { showToast('Invalid backup file'); }
+  };
+  reader.readAsText(file);
+}
+
+// ── SCORING ──────────────────────────────────────────────────────────────────
+function scoreOutfit(items) {
+  if (items.length < 2) return null;
+  let colorScore = 0, colorPairs = 0;
+  for (let i = 0; i < items.length; i++) {
+    for (let j = i+1; j < items.length; j++) {
+      const a = items[i].color, b = items[j].color;
+      if (COLOR_COMPAT[a]?.[b]) { colorScore += COLOR_COMPAT[a][b]; colorPairs++; }
+    }
+  }
+  const colorFinal = colorPairs > 0 ? colorScore / colorPairs : 70;
+  const formalities = items.map(i => i.formality);
+  const formalRange = Math.max(...formalities) - Math.min(...formalities);
+  const formalScore = formalRange === 0 ? 100 : formalRange === 1 ? 85 : formalRange === 2 ? 60 : 35;
+  const occSets = items.map(i => new Set(i.occasions));
+  let overlap = occSets[0];
+  for (const s of occSets) overlap = new Set([...overlap].filter(x => s.has(x)));
+  const occasionScore = overlap.size >= 2 ? 100 : overlap.size === 1 ? 75 : 40;
+  const patterns = items.filter(i => i.color === 'pattern').length;
+  const patternScore = patterns === 0 ? 90 : patterns === 1 ? 95 : 50;
+  let total = Math.round(colorFinal * 0.4 + formalScore * 0.3 + occasionScore * 0.2 + patternScore * 0.1);
+
+  // AI pairing boost — if items match an AI-suggested pairing, boost score
+  let aiBoost = 0;
+  for (const item of items) {
+    if (item.aiPairings?.length) {
+      for (const pairing of item.aiPairings) {
+        const matchCount = (pairing.items || []).filter(name =>
+          items.some(i => i.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(i.name.toLowerCase()))
+        ).length;
+        if (matchCount >= 2) { aiBoost = 5; break; }
+      }
+    }
+    if (aiBoost) break;
+  }
+
+  total = Math.min(100, total + aiBoost);
+  return { total, color: Math.round(colorFinal), formality: formalScore, occasion: occasionScore, pattern: patternScore };
+}
+
+function getVerdict(s) {
+  if (s >= 90) return 'Exceptional';
+  if (s >= 80) return 'Strong pairing';
+  if (s >= 70) return 'Works well';
+  if (s >= 60) return 'Decent match';
+  return 'Needs work';
+}
+
+function getStylingNote(items, score) {
+  if (!score) return '';
+
+  // Check if any AI pairing matches this combination
+  for (const item of items) {
+    if (item.aiPairings?.length) {
+      for (const pairing of item.aiPairings) {
+        const pairingNames = pairing.items || [];
+        const matchCount = pairingNames.filter(name =>
+          items.some(i => i.name.toLowerCase().includes(name.toLowerCase()) || name.toLowerCase().includes(i.name.toLowerCase()))
+        ).length;
+        if (matchCount >= Math.min(2, pairingNames.length)) {
+          return pairing.note || getStylingNoteFromScore(items, score);
+        }
+      }
+    }
+  }
+  return getStylingNoteFromScore(items, score);
+}
+
+function getStylingNoteFromScore(items, score) {
+  const top = items.find(i => i.cat === 'Top');
+  const bottom = items.find(i => i.cat === 'Bottoms');
+  if (score.total >= 85) {
+    if (top?.color === 'pattern') return 'The striped shirt is your anchor — everything else stays solid and the look sings.';
+    if (top && bottom) return `${top.name} and ${bottom.name} share a natural tonal relationship. A well-balanced combination.`;
+    return 'Well-balanced combination — the pieces work naturally together.';
+  }
+  if (score.formality < 60) return 'The formality levels differ here — consider whether the occasion calls for more consistency.';
+  if (score.color < 65) return 'A bold color pairing. Keep accessories neutral to avoid competing tones.';
+  if (score.occasion < 50) return 'These pieces are pulled from different occasions — an interesting mix.';
+  return 'A solid combination. Small adjustments could push the score higher.';
+}
+
+function scoreClass(s) { return s >= 80 ? 'high' : s >= 65 ? 'mid' : 'low'; }
+
+// ── RENDER: WARDROBE ─────────────────────────────────────────────────────────
+function renderWardrobe(filter = 'all') {
+  // Dynamically build filter buttons based on what categories exist in wardrobe
+  const filterContainer = document.getElementById('wardrobe-filter-btns');
+  if (filterContainer) {
+    const usedCats = [...new Set(wardrobe.map(i => i.cat))];
+    const allBtns = [{ cat: 'all', label: 'All' }];
+    // Order them nicely
+    const catOrder = ['Top', 'Bottoms', 'Shoes', 'Jackets & Outerwear', 'Belt', 'Watch', 'Hat', 'Socks'];
+    catOrder.forEach(cat => {
+      if (usedCats.includes(cat)) {
+        const label = cat === 'Jackets & Outerwear' ? 'Outerwear' : cat;
+        allBtns.push({ cat, label });
+      }
+    });
+    // Add any custom categories not in the standard list
+    usedCats.forEach(cat => {
+      if (!catOrder.includes(cat)) allBtns.push({ cat, label: cat });
+    });
+    filterContainer.innerHTML = allBtns.map(b => `
+      <button class="filter-btn ${filter === b.cat ? 'active' : ''}"
+        onclick="filterWardrobe('${b.cat}', this, '${b.label}')">${b.label}</button>
+    `).join('');
+  }
+
+  const grid = document.getElementById('wardrobe-grid');
+  const items = filter === 'all' ? wardrobe : wardrobe.filter(i => i.cat === filter);
+  grid.innerHTML = items.map(item => `
+    <div class="item-card" id="wc-${item.id}" onclick="openEditItem(${item.id}, event)" style="cursor:pointer">
+      <div class="sel-badge">✓</div>
+      ${item.img ? `<img class="item-photo" src="${item.img}" alt="${item.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
+      <div class="item-placeholder" style="${item.img ? 'display:none' : ''}">${CAT_EMOJI[item.cat]}</div>
+      <div class="item-info">
+        <div class="item-cat">${item.cat}</div>
+        <div class="item-name">${item.name}</div>
+        ${(()=>{const count=savedOutfits.filter(o=>o.items?.some(i=>i.id===item.id)).length;return count>0?`<div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-top:4px">${count} ${count===1?'Look':'Looks'}</div>`:'';})()}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── RENDER: BUILDER ──────────────────────────────────────────────────────────
+function renderBuilder() {
+  renderFlatLay();
+  const container = document.getElementById('builder-cats');
+  container.innerHTML = CAT_ORDER.map(cat => {
+    const items = wardrobe.filter(i => i.cat === cat);
+    if (!items.length) return '';
+    return `
+      <div class="cat-section">
+        <div class="cat-label">${({'Bottoms':'Bottoms','Shoes':'Shoes','Jackets & Outerwear':'Jackets & Outerwear','Socks':'Socks','Belt':'Belts','Watch':'Watches','Hat':'Hats'})[cat] || cat + 's'}</div>
+        <div class="scroll-row">
+          ${items.map(item => `
+            <div class="mini-card ${selectedItems[cat] === item.id ? 'active' : ''}" onclick="toggleSelect('${cat}', ${item.id})">
+              <div class="sel-badge">✓</div>
+              ${item.img ? `<img class="mini-photo" src="${item.img}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
+              <div class="mini-placeholder" style="${item.img ? 'display:none' : ''}">${CAT_EMOJI[cat]}</div>
+              <div class="mini-info"><div class="mini-name">${item.name}</div></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderFlatLay() {
+  const selected = CAT_ORDER.map(cat => selectedItems[cat] ? wardrobe.find(i => i.id === selectedItems[cat]) : null).filter(Boolean);
+  const flatLay = document.getElementById('outfit-flat-lay');
+  const scoreDetail = document.getElementById('score-detail');
+  const scorePill = document.getElementById('score-pill');
+
+  if (!selected.length) {
+    flatLay.innerHTML = '<div class="outfit-empty">Select pieces below to build your outfit</div>';
+    scoreDetail.classList.remove('visible');
+    scorePill.style.display = 'none';
+    return;
+  }
+
+  // ── Check if selected items match a saved look ────────────────────────────
+  const selectedIds = selected.map(i => String(i.id)).sort();
+
+  const matchedLook = savedOutfits.find(o => {
+    if (!o.items?.length || !o.outfitPhoto) return false;
+    const lookIds = o.items.map(i => String(i.id)).sort();
+    // EXACT match — every look item must be selected (but extra items are allowed on top)
+    return lookIds.every(id => selectedIds.includes(id));
+  });
+
+  // Extra items selected beyond the matched look's core items
+  const extraItems = matchedLook
+    ? selected.filter(i => !matchedLook.items.some(li => String(li.id) === String(i.id)))
+    : [];
+
+  // ── Render flat lay ───────────────────────────────────────────────────────
+  if (matchedLook && matchedLook.outfitPhoto) {
+    // Show the saved look photo + any extra items
+    flatLay.innerHTML = `
+      <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;width:100%">
+        <div style="position:relative">
+          <img src="${matchedLook.outfitPhoto}"
+            style="height:200px;object-fit:cover;border:1px solid var(--border);border-radius:2px;display:block">
+          <div style="position:absolute;bottom:6px;left:6px;background:rgba(30,51,41,0.85);color:#C4A876;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border-radius:1px">${matchedLook.name}</div>
+        </div>
+        ${extraItems.length ? `
+          <div style="display:flex;flex-direction:column;gap:8px;justify-content:center">
+            <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);margin-bottom:2px">Also adding</div>
+            ${extraItems.map(item => `
+              <div class="flat-lay-slot">
+                <div class="flat-lay-img flat-lay-sm">
+                  ${item.img
+                    ? `<img src="${item.img}" onerror="this.parentElement.innerHTML='<span style=font-size:22px>${CAT_EMOJI[item.cat]}</span>'">`
+                    : `<span style="font-size:22px">${CAT_EMOJI[item.cat]}</span>`}
+                </div>
+                <div class="flat-lay-label">${item.name}</div>
+              </div>
+            `).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+  } else {
+    // Default flat lay grid
+    flatLay.innerHTML = selected.map(item => {
+      const sizeClass = item.cat === 'Top' ? 'flat-lay-top' : item.cat === 'Bottoms' ? 'flat-lay-trousers' : item.cat === 'Shoes' ? 'flat-lay-shoes' : 'flat-lay-sm';
+      return `
+        <div class="flat-lay-slot">
+          <div class="flat-lay-img ${sizeClass}">
+            ${item.img
+              ? `<img src="${item.img}" onerror="this.parentElement.innerHTML='<span style=font-size:28px>${CAT_EMOJI[item.cat]}</span>'">`
+              : `<span style="font-size:28px">${CAT_EMOJI[item.cat]}</span>`}
+          </div>
+          <div class="flat-lay-label">${item.name}</div>
+          ${item.desc ? `<div style="font-size:9px;color:var(--dim);text-align:center;max-width:90px;line-height:1.3">${item.desc}</div>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  // ── Score ─────────────────────────────────────────────────────────────────
+  if (selected.length >= 2) {
+    const score = scoreOutfit(selected);
+    if (score) {
+      scorePill.style.display = 'flex';
+      scorePill.className = 'score-pill ' + scoreClass(score.total);
+      document.getElementById('score-num').textContent = score.total;
+      scoreDetail.classList.add('visible');
+      document.getElementById('score-bars').innerHTML = [
+        { label: 'Color', val: score.color },
+        { label: 'Formality', val: score.formality },
+        { label: 'Occasion', val: score.occasion },
+        { label: 'Pattern', val: score.pattern },
+      ].map(b => `
+        <div class="score-bar-row">
+          <div class="score-bar-label">${b.label}</div>
+          <div class="score-bar-track"><div class="score-bar-fill" style="width:${b.val}%"></div></div>
+          <div class="score-bar-val">${b.val}</div>
+        </div>
+      `).join('');
+      const baseNote = getStylingNote(selected, score);
+      const fullNote = lastVibeReason ? baseNote + ' — ' + lastVibeReason + '.' : baseNote;
+      document.getElementById('styling-note').textContent = fullNote;
+    }
+  } else {
+    scoreDetail.classList.remove('visible');
+    scorePill.style.display = 'none';
+  }
+}
+function renderLooks(filter) {
+  if (filter !== undefined) looksFilter = filter;
+  const grid = document.getElementById('looks-grid');
+
+  let outfits = savedOutfits;
+  const seasons = ['Spring','Summer','Fall','Winter'];
+  if (looksFilter === 'favorites') outfits = savedOutfits.filter(o => o.favorite);
+  else if (seasons.includes(looksFilter)) outfits = savedOutfits.filter(o => o.seasons?.includes(looksFilter));
+  else if (looksFilter !== 'all') outfits = savedOutfits.filter(o => o.occasions?.includes(looksFilter));
+
+  if (!savedOutfits.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="icon"></div><h3>No looks yet</h3><p>Head to Builder to compose<br>and save your first look</p></div>`;
+    return;
+  }
+
+  if (!outfits.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="icon">★</div><h3>No matches</h3><p>No looks found for this filter</p></div>`;
+    return;
+  }
+
+  grid.innerHTML = outfits.map((outfit, idx) => {
+    const realIdx = savedOutfits.indexOf(outfit);
+    const sc = scoreClass(outfit.score);
+    const cover = outfit.outfitPhoto
+      ? `<img class="saved-cover" src="${outfit.outfitPhoto}" alt="${outfit.name}">`
+      : `<div class="saved-cover-placeholder">${outfit.items.map(item => `<div class="saved-thumb">${item.img ? `<img src="${item.img}">` : CAT_EMOJI[item.cat]}</div>`).join('')}</div>`;
+    return `
+      <div class="saved-card" onclick="openEditLook(${realIdx})" style="cursor:pointer">
+        ${cover}
+        <div class="saved-info">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
+            <div class="saved-name">${outfit.name}</div>
+            <button onclick="toggleLookFavorite(${realIdx})" style="background:none;border:none;font-size:18px;cursor:pointer;padding:0 0 0 6px;line-height:1;flex-shrink:0">${outfit.favorite ? '★' : '☆'}</button>
+          </div>
+          <div class="saved-score ${sc}">${outfit.score}/100 — ${getVerdict(outfit.score)}</div>
+          ${outfit.date ? `<div style="font-size:9px;color:var(--dim);letter-spacing:1px;margin-bottom:4px">${outfit.date}</div>` : ''}
+          <div class="saved-pieces">${outfit.items.map(i => i.name).join(' · ')}</div>
+          ${outfit.occasions?.length ? `<div class="saved-tags">${outfit.occasions.map(o => `<span class="saved-tag">${o}</span>`).join('')}</div>` : ''}
+          ${outfit.seasons?.length ? `<div class="saved-tags">${outfit.seasons.map(s => `<span class="saved-tag" style="border-color:var(--green);color:var(--green)">${s}</span>`).join('')}</div>` : ''}
+          ${outfit.notes ? `<div style="font-size:11px;color:var(--mid);font-style:italic;line-height:1.6;padding:8px 0;border-top:1px solid var(--border);margin-top:4px">"${outfit.notes}"</div>` : ''}
+          <div class="saved-foot" onclick="openEditLook(${realIdx})" style="cursor:pointer">
+            <span class="saved-date">${outfit.worn ? 'Worn' : 'Saved'}</span>
+            <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid)">Edit ›</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+let editingLookIdx = null;
+
+function openEditLook(idx) {
+  editingLookIdx = idx;
+  const outfit = savedOutfits[idx];
+  if (!outfit) return;
+  uploadedData.editlook = null;
+  document.getElementById('edit-look-name').value = outfit.name || '';
+  document.getElementById('edit-look-notes').value = outfit.notes || '';
+  document.getElementById('edit-look-photo-preview').style.display = 'none';
+  document.querySelectorAll('#edit-look-occ .checkbox-btn').forEach(btn => {
+    btn.classList.toggle('active', outfit.occasions?.includes(btn.textContent));
+  });
+  document.querySelectorAll('#edit-look-season .checkbox-btn').forEach(btn => {
+    btn.classList.toggle('active', outfit.seasons?.includes(btn.textContent));
+  });
+  openModal('modal-edit-look');
+}
+
+function regenerateEditName() {
+  const outfit = savedOutfits[editingLookIdx];
+  if (!outfit) return;
+  const occasions = [...document.querySelectorAll('#edit-look-occ .checkbox-btn.active')].map(b => b.textContent);
+  const seasons = [...document.querySelectorAll('#edit-look-season .checkbox-btn.active')].map(b => b.textContent);
+  document.getElementById('edit-look-name').value = generateOutfitName(outfit.items || [], occasions, seasons);
+}
+
+function saveEditLook() {
+  const outfit = savedOutfits[editingLookIdx];
+  if (!outfit) return;
+  const name = document.getElementById('edit-look-name').value.trim();
+  if (!name) { showToast('Please enter a name'); return; }
+  outfit.name = name;
+  outfit.notes = document.getElementById('edit-look-notes').value.trim();
+  outfit.occasions = [...document.querySelectorAll('#edit-look-occ .checkbox-btn.active')].map(b => b.textContent);
+  outfit.seasons = [...document.querySelectorAll('#edit-look-season .checkbox-btn.active')].map(b => b.textContent);
+  if (uploadedData.editlook) outfit.outfitPhoto = uploadedData.editlook;
+  persist();
+  closeModal('modal-edit-look');
+  renderLooks();
+  showToast('Look updated');
+}
+
+function toggleLookFavorite(idx) {
+  savedOutfits[idx].favorite = !savedOutfits[idx].favorite;
+  persist();
+  renderLooks();
+  showToast(savedOutfits[idx].favorite ? '★ Added to favorites' : 'Removed from favorites');
+}
+
+function deleteLook(idx) {
+  savedOutfits.splice(idx, 1);
+  persist();
+  renderLooks();
+  showToast('Removed');
+}
+
+// ── INTERACTIONS ─────────────────────────────────────────────────────────────
+function showView(name, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'curate') renderBuilder();
+  if (name === 'looks') renderLooks();
+}
+
+function filterWardrobe(filter, btn, label) {
+  document.querySelectorAll('#wardrobe-filters .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const activeLabel = document.getElementById('wardrobe-active-filter');
+  if (activeLabel) activeLabel.textContent = label || filter;
+  renderWardrobe(filter);
+  // Close filters after selection
+  document.getElementById('wardrobe-filters').style.display = 'none';
+  const toggle = document.getElementById('wardrobe-filter-toggle');
+  if (toggle) toggle.style.borderColor = filter !== 'all' ? 'var(--green)' : 'var(--border)';
+}
+
+function toggleWardrobeFilters() {
+  const panel = document.getElementById('wardrobe-filters');
+  const open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'flex';
+  panel.style.flexDirection = 'column';
+}
+
+function filterLooks(filter, btn) {
+  // Clear all active states
+  document.querySelectorAll('#looks-filters .filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderLooks(filter);
+}
+
+function toggleSubFilter(type) {
+  const season = document.getElementById('sub-season');
+  const occasion = document.getElementById('sub-occasion');
+  const seasonToggle = document.getElementById('filter-season-toggle');
+  const occToggle = document.getElementById('filter-occ-toggle');
+
+  if (type === 'season') {
+    const open = season.style.display !== 'none';
+    season.style.display = open ? 'none' : 'flex';
+    occasion.style.display = 'none';
+    seasonToggle.textContent = open ? 'Season ›' : 'Season ↓';
+    occToggle.textContent = 'Occasion ›';
+    seasonToggle.classList.toggle('active', !open);
+    occToggle.classList.remove('active');
+  } else {
+    const open = occasion.style.display !== 'none';
+    occasion.style.display = open ? 'none' : 'flex';
+    season.style.display = 'none';
+    occToggle.textContent = open ? 'Occasion ›' : 'Occasion ↓';
+    seasonToggle.textContent = 'Season ›';
+    occToggle.classList.toggle('active', !open);
+    seasonToggle.classList.remove('active');
+  }
+}
+
+function toggleSelect(cat, id) {
+  if (selectedItems[cat] === id) delete selectedItems[cat];
+  else selectedItems[cat] = id;
+  lastVibeReason = null;
+  renderBuilder();
+}
+
+function clearOutfit() {
+  selectedItems = {};
+  lastVibeReason = null;
+  const vibeInput = document.getElementById('vibe-input');
+  if (vibeInput) vibeInput.value = '';
+  renderBuilder();
+}
+
+let vibeCriteria = 'any';
+let lastVibeReason = null;
+
+function getVibeReason(vibe, occasion, season) {
+  const v = (vibe || '').toLowerCase();
+  const occ = occasion || '';
+
+  const officeReasons = [
+    'trustworthy for execs', 'boardroom approved', 'your boss will notice',
+    'office crush guaranteed', 'promotion energy', 'serious but make it fashion',
+    'credibility on sight', 'the quiet confidence play'
+  ];
+  const casualReasons = [
+    'effortless is the point', 'looks underdone on purpose', 'off-duty but make it intentional',
+    'cool without trying — allegedly', 'the weekend edit, perfected',
+    'you look like you woke up like this', 'casual but the good kind'
+  ];
+  const eveningReasons = [
+    'they will remember you', 'room-entering energy', 'the main character look',
+    'cocktail hour approved', 'fashionably on time', 'dressed for the after-party too',
+    'unforgettable, on purpose'
+  ];
+  const smartCasualReasons = [
+    'elevated without the effort showing', 'the sweet spot, nailed',
+    'smart enough for dinner, relaxed enough for drinks after',
+    'polished but not trying too hard', 'the art of looking put-together'
+  ];
+  const summerReasons = ['hot day energy sorted', 'linen-approved', 'heat-proof and still sharp'];
+  const winterReasons = ['cold outside, warm in here', 'layered and considered', 'winter done right'];
+
+  if (occ === 'Office') return officeReasons[Math.floor(Math.random() * officeReasons.length)];
+  if (occ === 'Evening') return eveningReasons[Math.floor(Math.random() * eveningReasons.length)];
+  if (occ === 'Smart Casual') return smartCasualReasons[Math.floor(Math.random() * smartCasualReasons.length)];
+  if (occ === 'Casual') return casualReasons[Math.floor(Math.random() * casualReasons.length)];
+  if (season === 'Summer' || v.includes('summer') || v.includes('hot')) return summerReasons[Math.floor(Math.random() * summerReasons.length)];
+  if (season === 'Winter' || v.includes('winter') || v.includes('cold')) return winterReasons[Math.floor(Math.random() * winterReasons.length)];
+  if (v.includes('dinner') || v.includes('date')) return eveningReasons[Math.floor(Math.random() * eveningReasons.length)];
+  if (v.includes('office') || v.includes('work') || v.includes('meeting')) return officeReasons[Math.floor(Math.random() * officeReasons.length)];
+  if (v.includes('brunch') || v.includes('lunch')) return smartCasualReasons[Math.floor(Math.random() * smartCasualReasons.length)];
+  return casualReasons[Math.floor(Math.random() * casualReasons.length)];
+}
+
+function toggleVibeCriteria() {
+  const panel = document.getElementById('vibe-criteria');
+  const label = document.getElementById('vibe-criteria-label');
+  const open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'flex';
+  label.textContent = open ? 'occasion ›' : 'occasion ↑';
+}
+
+function setVibeCriteria(criteria, btn) {
+  // Toggle off if already active
+  if (vibeCriteria === criteria) {
+    vibeCriteria = 'any';
+    document.querySelectorAll('#vibe-criteria .checkbox-btn').forEach(b => b.classList.remove('active'));
+    const label = document.getElementById('vibe-criteria-label');
+    if (label) label.textContent = 'occasion ›';
+    return;
+  }
+  vibeCriteria = criteria;
+  document.querySelectorAll('#vibe-criteria .checkbox-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const label = document.getElementById('vibe-criteria-label');
+  if (label) label.textContent = criteria + ' ↓';
+}
+
+function surpriseMe() {
+  lastVibeReason = null;
+  CAT_ORDER.forEach(cat => {
+    const locked = selectedItems[cat];
+    const items = wardrobe.filter(i => i.cat === cat);
+    if (!locked && items.length) {
+      selectedItems[cat] = items[Math.floor(Math.random() * items.length)].id;
+    }
+  });
+  renderBuilder();
+  showToast('Surprise outfit generated ✦');
+}
+
+function vibeGenerate() {
+  const vibe = document.getElementById('vibe-input').value.trim().toLowerCase();
+
+  // Keyword → occasion/season mapping
+  const vibeMap = {
+    office: 'Office', work: 'Office', meeting: 'Office', professional: 'Office', formal: 'Office',
+    casual: 'Casual', relaxed: 'Casual', chill: 'Casual', weekend: 'Casual', errands: 'Casual',
+    smart: 'Smart Casual', dinner: 'Smart Casual', date: 'Smart Casual', brunch: 'Smart Casual', lunch: 'Smart Casual',
+    evening: 'Evening', night: 'Evening', party: 'Evening', rooftop: 'Evening', cocktail: 'Evening', event: 'Evening',
+    summer: null, spring: null, fall: null, winter: null, warm: null, hot: null, cold: null, cool: null
+  };
+
+  const seasonMap = {
+    summer: 'Summer', spring: 'Spring', fall: 'Fall', autumn: 'Fall',
+    winter: 'Winter', warm: 'Summer', hot: 'Summer', cold: 'Winter', cool: 'Fall'
+  };
+
+  // Detect occasion from vibe text
+  let detectedOccasion = vibeCriteria !== 'any' ? vibeCriteria : null;
+  let detectedSeason = null;
+
+  for (const [keyword, occasion] of Object.entries(vibeMap)) {
+    if (vibe.includes(keyword)) {
+      if (occasion) detectedOccasion = occasion;
+    }
+  }
+  for (const [keyword, season] of Object.entries(seasonMap)) {
+    if (vibe.includes(keyword)) detectedSeason = season;
+  }
+
+  // Generate outfit filtered by detected occasion + season
+  CAT_ORDER.forEach(cat => {
+    const locked = selectedItems[cat];
+    if (locked) return; // respect locked items
+    let items = wardrobe.filter(i => i.cat === cat);
+    if (detectedOccasion) {
+      const filtered = items.filter(i => i.occasions?.includes(detectedOccasion));
+      if (filtered.length) items = filtered;
+    }
+    if (detectedSeason) {
+      const filtered = items.filter(i => i.seasons?.includes(detectedSeason));
+      if (filtered.length) items = filtered;
+    }
+    if (items.length) selectedItems[cat] = items[Math.floor(Math.random() * items.length)].id;
+  });
+
+  // Generate a reason blurb
+  lastVibeReason = getVibeReason(vibe, detectedOccasion, detectedSeason);
+  renderBuilder();
+  const label = detectedOccasion ? detectedOccasion : vibe ? 'your vibe' : 'a random look';
+  showToast('Generated for ' + label + ' ✦');
+}
+
+// ── SAVE OUTFIT ───────────────────────────────────────────────────────────────
+// ── OUTFIT NAME GENERATOR ─────────────────────────────────────────────────────
+function generateOutfitName(items, occasions, seasons) {
+  const tops = items.filter(i => i.cat === 'Top');
+  const bottoms = items.filter(i => i.cat === 'Bottoms');
+  const shoes = items.filter(i => i.cat === 'Shoes');
+  const hasJacket = items.some(i => i.cat === 'Jackets & Outerwear');
+
+  const occ = occasions?.[0] || '';
+  const season = seasons?.[0] || '';
+
+  // Color palette names
+  const colorNames = {
+    beige: 'Oat', brown: 'Cognac', navy: 'Midnight', black: 'Noir',
+    white: 'Ivory', green: 'Olive', pink: 'Blush', grey: 'Ash',
+    blue: 'Cobalt', pattern: 'Stripe', red: 'Bordeaux'
+  };
+
+  const topColor = tops[0] ? (colorNames[tops[0].color] || 'Tonal') : 'Tonal';
+  const bottomColor = bottoms[0] ? (colorNames[bottoms[0].color] || 'Tonal') : 'Tonal';
+
+  const moodNames = [
+    'Quiet Confidence', 'Soft Power', 'The Sunday Edit', 'Easy Elegance',
+    'Understated', 'The Considered Look', 'Clean Lines', 'Refined Ease'
+  ];
+
+  const placeNames = [
+    'The Milan Layover', 'Upper East Side', 'Amalfi Afternoon',
+    'The Paris Edit', 'Notting Hill Morning', 'SoHo Sunday',
+    'The London Brief', 'Côte d’Azur', 'The Brooklyn Brunch'
+  ];
+
+  const characterNames = [
+    'The Architect', 'Gallery Opener', 'The Diplomat', 'The Editor',
+    'The Curator', 'The Consultant', 'The Creative', 'The Understated'
+  ];
+
+  const colorNames2 = [
+    `${topColor} & ${bottomColor}`, `Tonal ${topColor}`,
+    `The ${bottomColor} Affair`, `${topColor} Hour`
+  ];
+
+  const seasonalNames = {
+    Spring: ['Spring Meridian', 'The Garden Edit', 'First Light'],
+    Summer: ['The Summer Brief', 'Golden Hour', 'Riviera Mode'],
+    Fall: ['Autumn Archive', 'The Fall Study', 'October Edit'],
+    Winter: ['Winter Volume', 'The Cold Brief', 'Dark Season']
+  };
+
+  const occasionNames = {
+    Office: characterNames,
+    Evening: placeNames,
+    Casual: moodNames,
+    'Smart Casual': [...moodNames, ...characterNames],
+    Weekend: [...placeNames, ...moodNames]
+  };
+
+  // Pick a style based on context
+  let pool = [];
+  if (season && seasonalNames[season]) pool = [...pool, ...seasonalNames[season]];
+  if (occ && occasionNames[occ]) pool = [...pool, ...occasionNames[occ]];
+  if (!pool.length) pool = [...moodNames, ...placeNames, ...characterNames, ...colorNames2];
+
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function regenerateName() {
+  const selected = CAT_ORDER.map(cat => selectedItems[cat] ? wardrobe.find(i => i.id === selectedItems[cat]) : null).filter(Boolean);
+  const occasions = [...document.querySelectorAll('#save-occ-checkboxes .checkbox-btn.active')].map(b => b.textContent);
+  const seasons = [...document.querySelectorAll('#save-season-checkboxes .checkbox-btn.active')].map(b => b.textContent);
+  document.getElementById('outfit-name').value = generateOutfitName(selected, occasions, seasons);
+}
+
+function saveOutfit() {
+  const selected = CAT_ORDER.map(cat => selectedItems[cat] ? wardrobe.find(i => i.id === selectedItems[cat]) : null).filter(Boolean);
+  if (selected.length < 2) { showToast('Select at least 2 items'); return; }
+  const previewItems = CAT_ORDER.map(cat => selectedItems[cat] ? wardrobe.find(i => i.id === selectedItems[cat]) : null).filter(Boolean);
+  document.getElementById('outfit-name').value = generateOutfitName(previewItems, [], []);
+  const vibeText = document.getElementById('vibe-input')?.value?.trim() || '';
+  document.getElementById('outfit-notes').value = vibeText;
+  document.getElementById('outfit-photo-preview').style.display = 'none';
+  uploadedData.outfit = null;
+  document.querySelectorAll('#save-occ-checkboxes .checkbox-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('#save-season-checkboxes .checkbox-btn').forEach(b => b.classList.remove('active'));
+  openModal('modal-save');
+}
+
+async function confirmSave() {
+  const name = document.getElementById('outfit-name').value.trim() || 'My Outfit';
+  const occasions = [...document.querySelectorAll('#save-occ-checkboxes .checkbox-btn.active')].map(b => b.textContent);
+  const worn = document.getElementById('worn-today').value === 'yes';
+  const selected = CAT_ORDER.map(cat => selectedItems[cat] ? wardrobe.find(i => i.id === selectedItems[cat]) : null).filter(Boolean);
+  const score = scoreOutfit(selected);
+  const today = new Date().toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+
+  const seasons = [...document.querySelectorAll('#save-season-checkboxes .checkbox-btn.active')].map(b => b.textContent);
+  const notes = document.getElementById('outfit-notes').value.trim();
+  const newOutfit = {
+    name, occasions, seasons, notes, score: score?.total || 0,
+    items: selected, date: today,
+    outfitPhoto: uploadedData.outfit || null,
+    worn: worn,
+    favorite: false,
+  };
+
+  savedOutfits.unshift(newOutfit);
+  persist();
+  closeModal('modal-save');
+  showToast('Look saved');
+
+  // Upload outfit photo to Supabase in background
+  if (isSupabaseConnected() && uploadedData.outfit && uploadedData.outfit.startsWith('data:')) {
+    const publicUrl = await uploadOutfitPhotoToSupabase(name, uploadedData.outfit);
+    if (publicUrl) {
+      newOutfit.outfitPhoto = publicUrl;
+      persist();
+      renderLooks();
+    }
+  }
+
+  selectedItems = {};
+  renderBuilder();
+}
+
+// ── ITEM MANAGEMENT ───────────────────────────────────────────────────────────
+async function addItem() {
+  const name = document.getElementById('new-name').value.trim();
+  if (!name) { showToast('Please enter a name'); return; }
+  const occasions = [...document.querySelectorAll('#occ-checkboxes .checkbox-btn.active')].map(b => b.textContent);
+  const url = document.getElementById('new-url').value.trim();
+  const id = nextId++;
+
+  // Start with local data
+  let imgSrc = uploadedData.add || url || null;
+
+  const newItem = {
+    id,
+    cat: document.getElementById('new-cat').value,
+    name,
+    desc: document.getElementById('new-desc').value.trim(),
+    color: document.getElementById('new-color').value,
+    formality: parseInt(document.getElementById('new-formality').value),
+    occasions: occasions.length ? occasions : ['Casual'],
+    img: imgSrc,
+  };
+
+  wardrobe.push(newItem);
+  uploadedData.add = null;
+  document.getElementById('add-upload-preview').style.display = 'none';
+  document.getElementById('new-name').value = '';
+  document.getElementById('new-desc').value = '';
+  document.getElementById('new-url').value = '';
+  document.querySelectorAll('#occ-checkboxes .checkbox-btn').forEach(b => b.classList.remove('active'));
+  persist();
+  closeModal('modal-add');
+  renderWardrobe();
+  showToast('Item added');
+
+  // Photo already uploaded to Supabase in previewUpload if connected
+  // Only upload here if still base64 (Supabase wasn't connected during preview)
+  if (isSupabaseConnected() && imgSrc && imgSrc.startsWith('data:')) {
+    const publicUrl = await uploadPhotoToSupabase(id, imgSrc);
+    if (publicUrl) {
+      newItem.img = publicUrl;
+      persist();
+      renderWardrobe();
+    }
+  }
+}
+
+function deleteItem(id, e) {
+  if (e && e.stopPropagation) e.stopPropagation();
+  wardrobe = wardrobe.filter(i => i.id !== id);
+  if (selectedItems) {
+    Object.keys(selectedItems).forEach(cat => { if (selectedItems[cat] === id) delete selectedItems[cat]; });
+  }
+  persist();
+  closeModal('modal-edit-item');
+  renderWardrobe();
+  showToast('Item removed');
+}
+
+function openEditItem(id, e) {
+  if (e) e.stopPropagation();
+  editingItemId = id;
+  const item = wardrobe.find(i => i.id === id);
+  if (!item) return;
+  document.getElementById('edit-cat').value = item.cat;
+  document.getElementById('edit-name').value = item.name;
+  document.getElementById('edit-desc').value = item.desc || '';
+  document.getElementById('edit-color').value = item.color || 'white';
+  document.getElementById('edit-formality').value = item.formality || 3;
+  document.querySelectorAll('#edit-occ-checkboxes .checkbox-btn').forEach(btn => {
+    btn.classList.toggle('active', item.occasions?.includes(btn.textContent));
+  });
+  // Pre-fill photo
+  uploadedData.edit = null;
+  const preview = document.getElementById('edit-upload-preview');
+  if (item.img && preview) { preview.src = item.img; preview.style.display = 'block'; }
+  else if (preview) preview.style.display = 'none';
+  document.getElementById('edit-url').value = item.img && item.img.startsWith('http') ? item.img : '';
+  openModal('modal-edit-item');
+}
+
+async function saveEditItem() {
+  const item = wardrobe.find(i => i.id === editingItemId);
+  if (!item) return;
+  const name = document.getElementById('edit-name').value.trim();
+  if (!name) { showToast('Please enter a name'); return; }
+  const occasions = [...document.querySelectorAll('#edit-occ-checkboxes .checkbox-btn.active')].map(b => b.textContent);
+  item.cat = document.getElementById('edit-cat').value;
+  item.name = name;
+  item.desc = document.getElementById('edit-desc').value.trim();
+  item.color = document.getElementById('edit-color').value;
+  item.formality = parseInt(document.getElementById('edit-formality').value);
+  item.occasions = occasions.length ? occasions : ['Casual'];
+  // Handle photo update
+  const url = document.getElementById('edit-url').value.trim();
+  const newImg = uploadedData.edit || (url && url !== item.img ? url : null);
+  if (newImg) item.img = newImg;
+  persist();
+  closeModal('modal-edit-item');
+  renderWardrobe();
+  showToast('Item updated');
+  // Only upload if still base64 (wasn't already uploaded in previewUpload)
+  if (newImg && newImg.startsWith('data:') && isSupabaseConnected()) {
+    const publicUrl = await uploadPhotoToSupabase(editingItemId, newImg);
+    if (publicUrl) { item.img = publicUrl; persist(); renderWardrobe(); }
+  }
+}
+
+function openEditPhoto(id, e) {
+  e.stopPropagation();
+  editingItemId = id;
+  uploadedData.edit = null;
+  const item = wardrobe.find(i => i.id === id);
+  document.getElementById('edit-photo-title').textContent = item?.name || 'Update Photo';
+  document.getElementById('edit-upload-preview').style.display = 'none';
+  document.getElementById('edit-url').value = '';
+  openModal('modal-edit-photo');
+}
+
+async function saveEditPhoto() {
+  const url = document.getElementById('edit-url').value.trim();
+  const img = uploadedData.edit || url || null;
+  if (!img) { showToast('Please upload a photo or enter a URL'); return; }
+  const item = wardrobe.find(i => i.id === editingItemId);
+  if (!item) return;
+  item.img = img;
+  persist();
+  closeModal('modal-edit-photo');
+  renderWardrobe();
+  showToast('Photo updated');
+
+  // Upload to Supabase in background if local
+  if (isSupabaseConnected() && img.startsWith('data:')) {
+    showToast('Uploading photo...');
+    const publicUrl = await uploadPhotoToSupabase(editingItemId, img);
+    if (publicUrl) {
+      item.img = publicUrl;
+      persist();
+      renderWardrobe();
+      showToast('Photo saved to cloud ✓');
+    }
+  }
+}
+
+// ── UPLOADS (with compression) ───────────────────────────────────────────────
+function previewUpload(type, input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    // First compress for preview display
+    compressImage(e.target.result, 600, 0.7, async compressed => {
+      // Show preview immediately
+      const previewId = type === 'add' ? 'add-upload-preview' : type === 'edit' ? 'edit-upload-preview' : type === 'editlook' ? 'edit-look-photo-preview' : 'outfit-photo-preview';
+      const prev = document.getElementById(previewId);
+      prev.src = compressed;
+      prev.style.display = 'block';
+
+      // Store compressed locally for immediate use
+      uploadedData[type] = compressed;
+
+      // If Supabase connected — upload immediately and store URL instead of base64
+      if (isSupabaseConnected() && (type === 'add' || type === 'edit' || type === 'editlook' || type === 'outfit')) {
+        const tempId = editingItemId || Date.now();
+        const publicUrl = await uploadPhotoToSupabase(tempId, compressed);
+        if (publicUrl) {
+          uploadedData[type] = publicUrl; // Replace base64 with URL
+          showToast('Photo uploaded to cloud ✓');
+        }
+      }
+
+      // Show analyze button if Anthropic key exists
+      if (type === 'add') {
+        const btn = document.getElementById('analyze-btn');
+        if (btn && localStorage.getItem('anthropic_key')) {
+          btn.style.display = 'block';
+          setTimeout(() => analyzePhoto(), 300);
+        }
+      }
+      if (type === 'edit') {
+        const btn = document.getElementById('analyze-edit-btn');
+        if (btn && localStorage.getItem('anthropic_key')) {
+          btn.style.display = 'block';
+          setTimeout(() => analyzeEditPhoto(), 300);
+        }
+      }
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function compressImage(dataUrl, maxWidth, quality, callback) {
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    const scale = Math.min(1, maxWidth / img.width);
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    callback(canvas.toDataURL('image/jpeg', quality));
+  };
+  img.src = dataUrl;
+}
+
+// Upload photo to Supabase immediately and return public URL
+// Falls back to storing compressed base64 only if Supabase not connected
+async function processAndStorePhoto(dataUrl, itemId) {
+  if (isSupabaseConnected()) {
+    const publicUrl = await uploadPhotoToSupabase(itemId || Date.now(), dataUrl);
+    if (publicUrl) return publicUrl; // Return URL — don't store base64
+  }
+  // Fallback: compress and store locally
+  return new Promise(resolve => compressImage(dataUrl, 600, 0.7, resolve));
+}
+
+// ── ANTHROPIC AI ANALYSIS ────────────────────────────────────────────────────
+async function analyzeAllItems() {
+  const key = localStorage.getItem('anthropic_key');
+  if (!key) { showToast('Add your Anthropic API key first'); return; }
+
+  const itemsWithPhotos = wardrobe.filter(i => i.img);
+  const itemsWithoutPhotos = wardrobe.filter(i => !i.img);
+
+  if (!itemsWithPhotos.length) {
+    showToast('No items with photos to analyze');
+    return;
+  }
+
+  const statusEl = document.getElementById('analyze-all-status');
+  const btn = document.getElementById('analyze-all-btn');
+  statusEl.style.display = 'block';
+  btn.disabled = true;
+  btn.textContent = 'Analyzing...';
+
+  let done = 0;
+  let failed = 0;
+
+  for (const item of itemsWithPhotos) {
+    statusEl.textContent = `Analyzing ${done + 1} of ${itemsWithPhotos.length}: ${item.name}...`;
+    try {
+      // Handle both base64 and Supabase URLs
+      let imageData = item.img;
+      let base64, mediaType;
+
+      if (imageData.startsWith('data:')) {
+        base64 = imageData.split(',')[1];
+        mediaType = imageData.split(';')[0].split(':')[1] || 'image/jpeg';
+      } else if (imageData.startsWith('http')) {
+        // Fetch from Supabase URL and convert to base64
+        try {
+          const fetchRes = await fetch(imageData);
+          const blob = await fetchRes.blob();
+          const reader = new FileReader();
+          imageData = await new Promise(resolve => {
+            reader.onload = e => resolve(e.target.result);
+            reader.readAsDataURL(blob);
+          });
+          base64 = imageData.split(',')[1];
+          mediaType = blob.type || 'image/jpeg';
+        } catch(e) {
+          done++;
+          continue;
+        }
+      } else {
+        done++;
+        continue;
+      }
+
+      const wardrobeSummary = wardrobe
+        .filter(w => w.id !== item.id)
+        .map(i => `${i.name} (${i.cat}, ${i.color}, formality ${i.formality})`)
+        .join(', ');
+
+      const response = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 600,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+              { type: 'text', text: `Analyze this clothing item. Rest of wardrobe: ${wardrobeSummary || 'none yet'}. Return ONLY JSON:
+{
+  "color": "one of: white, black, navy, blue, grey, beige, brown, green, pink, red, pattern",
+  "formality": number 1-5,
+  "occasions": array from ["Casual","Smart Casual","Office","Evening","Weekend"],
+  "desc": "brief 3-6 word description",
+  "pairings": [{"occasion":"","items":[],"note":""}]
+}` }
+            ]
+          }]
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const text = data.content[0].text.trim().replace(/```json|```/g, '').trim();
+        const result = JSON.parse(text);
+        // Update item with AI data
+        if (result.color) item.color = result.color;
+        if (result.formality) item.formality = result.formality;
+        if (result.occasions?.length) item.occasions = result.occasions;
+        if (result.desc) item.desc = result.desc;
+        if (result.pairings) item.aiPairings = result.pairings;
+        done++;
+      } else {
+        failed++;
+        done++;
+      }
+    } catch(e) {
+      failed++;
+      done++;
+    }
+
+    // Small delay between calls to avoid rate limiting
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  persist();
+  renderWardrobe();
+
+  const skipped = itemsWithoutPhotos.length;
+  statusEl.innerHTML = `✓ Analyzed ${done} items${failed ? ', ' + failed + ' failed' : ''}${skipped ? '<br>' + skipped + ' items skipped (no photo)' : ''}`;
+  statusEl.style.color = 'var(--green)';
+  btn.disabled = false;
+  btn.textContent = '✦ Analyze All Wardrobe Items';
+  showToast('Wardrobe analysis complete ✓');
+}
+
+function saveAnthropicKey() {
+  const key = document.getElementById('anthropic-key').value.trim();
+  if (!key) { showToast('Please enter your API key'); return; }
+  localStorage.setItem('anthropic_key', key);
+  showAnthropicStatus('AI analysis ready ✓', true);
+  showToast('AI key saved ✓');
+}
+
+function showAnthropicStatus(msg, success) {
+  const bar = document.getElementById('anthropic-status');
+  if (!bar) return;
+  bar.style.display = 'block';
+  bar.style.background = success ? 'rgba(61,107,82,0.15)' : 'rgba(139,58,47,0.15)';
+  bar.style.border = success ? '1px solid var(--green)' : '1px solid var(--red)';
+  bar.style.color = success ? 'var(--green)' : 'var(--red)';
+  bar.style.padding = '8px 12px';
+  bar.style.borderRadius = '2px';
+  bar.textContent = msg;
+}
+
+async function analyzePhoto() {
+  const key = localStorage.getItem('anthropic_key');
+  if (!key) { showToast('Add your Anthropic API key in Settings first'); return; }
+  if (!uploadedData.add) { showToast('Upload a photo first'); return; }
+  await runAnalysis(uploadedData.add, key, 'add');
+}
+
+async function analyzeEditPhoto() {
+  const key = localStorage.getItem('anthropic_key');
+  if (!key) { showToast('Add your Anthropic API key in Settings first'); return; }
+  const img = uploadedData.edit;
+  if (!img) { showToast('Upload a photo first'); return; }
+  await runAnalysis(img, key, 'edit');
+}
+
+async function runAnalysis(imageData, key, mode) {
+  const statusId = mode === 'add' ? 'analyze-status' : 'analyze-edit-status';
+  const btnId = mode === 'add' ? 'analyze-btn' : 'analyze-edit-btn';
+  const status = document.getElementById(statusId);
+  const btn = document.getElementById(btnId);
+
+  status.style.display = 'block';
+  status.style.color = 'var(--mid)';
+  status.textContent = 'Analyzing your photo...';
+  if (btn) btn.disabled = true;
+
+  try {
+    const base64 = imageData.split(',')[1];
+    const mediaType = imageData.split(';')[0].split(':')[1] || 'image/jpeg';
+
+    // Build wardrobe summary for pairing suggestions
+    const wardrobeSummary = wardrobe.map(i =>
+      `- ${i.name} (${i.cat}, ${i.color}, formality ${i.formality})`
+    ).join(', ');
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-opus-4-5',
+        max_tokens: 800,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: mediaType, data: base64 }
+            },
+            {
+              type: 'text',
+              text: `Analyze this clothing item photo. The user's existing wardrobe is:
+${wardrobeSummary || 'No items yet'}
+
+Return ONLY a JSON object with these exact fields, no other text:
+{
+  "name": "short descriptive name for the item",
+  "cat": "one of: Top, Bottoms, Shoes, Jackets & Outerwear, Belt, Watch, Hat, Socks",
+  "color": "one of: white, black, navy, blue, grey, beige, brown, green, pink, red, pattern",
+  "formality": number 1-5 (1=very casual, 5=formal),
+  "occasions": array from: ["Casual", "Smart Casual", "Office", "Evening", "Weekend"],
+  "desc": "brief 3-6 word description of style/fit/material",
+  "pairings": [
+    {
+      "occasion": "e.g. Smart Casual",
+      "items": ["exact item name from wardrobe", "exact item name from wardrobe"],
+      "note": "one short punchy sentence on why this works"
+    }
+  ]
+}
+For pairings: suggest 2-3 specific outfit combinations using exact item names from the wardrobe list above. If the wardrobe is empty, suggest generic pairings. Be specific and opinionated.`
+            }
+          ]
+        }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error?.message || 'API error ' + response.status);
+    }
+
+    const data = await response.json();
+    const text = data.content[0].text.trim();
+    const clean = text.replace(/```json|```/g, '').trim();
+    const result = JSON.parse(clean);
+
+    // ── Fill in form fields ───────────────────────────────────────────────────
+    if (mode === 'add') {
+      if (result.name) document.getElementById('new-name').value = result.name;
+      if (result.cat) document.getElementById('new-cat').value = result.cat;
+      if (result.color) document.getElementById('new-color').value = result.color;
+      if (result.formality) document.getElementById('new-formality').value = result.formality;
+      if (result.desc) document.getElementById('new-desc').value = result.desc;
+      if (result.occasions) {
+        document.querySelectorAll('#occ-checkboxes .checkbox-btn').forEach(btn => {
+          btn.classList.toggle('active', result.occasions.includes(btn.textContent.trim()));
+        });
+      }
+    } else {
+      if (result.name) document.getElementById('edit-name').value = result.name;
+      if (result.cat) document.getElementById('edit-cat').value = result.cat;
+      if (result.color) document.getElementById('edit-color').value = result.color;
+      if (result.formality) document.getElementById('edit-formality').value = result.formality;
+      if (result.desc) document.getElementById('edit-desc').value = result.desc;
+      if (result.occasions) {
+        document.querySelectorAll('#edit-occ-checkboxes .checkbox-btn').forEach(btn => {
+          btn.classList.toggle('active', result.occasions.includes(btn.textContent.trim()));
+        });
+      }
+    }
+
+    // ── Show pairing suggestions ──────────────────────────────────────────────
+    let html = '<div style="margin-top:4px">';
+    html += '<div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:8px">✦ Fields filled — AI Pairing Suggestions</div>';
+
+    if (result.pairings?.length) {
+      result.pairings.forEach(p => {
+        html += `<div style="padding:10px 12px;background:var(--warm);border:1px solid var(--border);border-radius:1px;margin-bottom:8px">
+          <div style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:4px">${p.occasion}</div>
+          <div style="font-size:12px;color:var(--ink);margin-bottom:3px;font-weight:500">${p.items.join(' + ')}</div>
+          <div style="font-size:11px;color:var(--mid);font-style:italic">${p.note}</div>
+        </div>`;
+      });
+    }
+
+    html += '</div>';
+    status.innerHTML = html;
+    status.style.color = '';
+
+  } catch(err) {
+    status.textContent = 'Analysis failed: ' + (err.message || 'Please try again');
+    status.style.color = 'var(--red)';
+    console.log('Analysis error:', err);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function toggleOcc(btn) { btn.classList.toggle('active'); }
+
+// ── MODAL ─────────────────────────────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+  if (id === 'modal-settings') {
+    const url = localStorage.getItem('supa_url');
+    const key = localStorage.getItem('supa_key');
+    const anthKey = localStorage.getItem('anthropic_key');
+    if (url) document.getElementById('supa-url').value = url;
+    if (key) document.getElementById('supa-key').value = key;
+    if (anthKey) document.getElementById('anthropic-key').value = anthKey;
+    if (supabaseClient) showSupabaseStatus('Connected to Supabase ✓', true);
+    else if (url && key) showSupabaseStatus('Keys saved — reconnecting...', true);
+    if (anthKey) showAnthropicStatus('AI analysis ready ✓', true);
+  }
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => { if (e.target === overlay) overlay.classList.remove('open'); });
+});
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── WEATHER ──────────────────────────────────────────────────────────────────
+const WEATHER_ICONS = {
+  sunny: '☀️', clear: '☀️', cloudy: '☁️', overcast: '☁️',
+  'partly cloudy': '⛅', 'mostly cloudy': '☁️',
+  rain: '🌧', drizzle: '🌦', snow: '❄️', thunder: '⛈', fog: '🌫', windy: '💨'
+};
+
+function getWeatherIcon(condition) {
+  if (!condition) return '🌡';
+  const c = condition.toLowerCase();
+  for (const [key, icon] of Object.entries(WEATHER_ICONS)) {
+    if (c.includes(key)) return icon;
+  }
+  return '🌡';
+}
+
+function getWeatherQuip(condition, high, low) {
+  const c = (condition || '').toLowerCase();
+  const quips = {
+    sunny: [
+      `${high}°F and the sun's doing the most today. Light layers, big energy.`,
+      `Sunny with a chance of looking great. No excuses for a bad outfit.`,
+      `The weather's dressed up — you should too.`
+    ],
+    cloudy: [
+      `Overcast skies call for earth tones. You already own all of them.`,
+      `Moody weather, moody fits. Lean into it.`,
+      `Cloud cover is just nature's diffused lighting. You'll photograph well.`
+    ],
+    rain: [
+      `It's raining. Wear something you wouldn't mind getting slightly soggy.`,
+      `Rain day. The loafers stay home.`,
+      `Wet outside. This is what the suede loafers are not for.`
+    ],
+    drizzle: [
+      `Light drizzle — the sneakers might survive this one.`,
+      `Just a drizzle. Still, maybe not the suede today.`,
+      `Barely raining. Commit to the fit anyway.`
+    ],
+    snow: [
+      `Snow day. Layer up and make it look intentional.`,
+      `It's snowing. The coat IS the outfit today.`,
+      `Cold and snowy. Time for the heavy hitters.`
+    ],
+    thunder: [
+      `Thunderstorm out there. Dress like you planned to stay in but look good anyway.`,
+      `Lightning and thunder. Probably stay inside and plan tomorrow's outfit instead.`
+    ],
+    fog: [
+      `Foggy and mysterious out there. Very cinematic. Dress accordingly.`,
+      `You can barely see five feet ahead. Perfect excuse for a moody tonal look.`
+    ]
+  };
+
+  let pool = quips.cloudy; // default
+  for (const [key, arr] of Object.entries(quips)) {
+    if (c.includes(key)) { pool = arr; break; }
+  }
+
+  // Temperature overrides
+  if (high >= 85) pool = [`${high}°F? That's a crime. Linen only. No exceptions.`, `Hot out there. Your linen trousers are legally required today.`];
+  if (high <= 35) pool = [`${high}°F. Whatever you're wearing, add a layer. Then add another.`, `Freezing. The coat carries the whole look today.`];
+
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+async function fetchWeather() {
+  const widget = document.getElementById('weather-widget');
+  if (!widget) return;
+  try {
+    const pos = await new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 5000 });
+    });
+    const { latitude, longitude } = pos.coords;
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&daily=temperature_2m_max,temperature_2m_min,weathercode&current_weather=true&temperature_unit=fahrenheit&timezone=auto&forecast_days=1`);
+    const data = await res.json();
+    const high = Math.round(data.daily.temperature_2m_max[0]);
+    const low = Math.round(data.daily.temperature_2m_min[0]);
+    const code = data.daily.weathercode[0];
+    const condition = getConditionFromCode(code);
+    const icon = getWeatherIcon(condition);
+    widget.innerHTML = `<span style="font-size:16px">${icon}</span><span>${high}° / ${low}°F</span>`;
+    const quip = document.getElementById('weather-quip');
+    if (quip) {
+      quip.textContent = getWeatherQuip(condition, high, low);
+      quip.style.display = 'block';
+    }
+  } catch(e) {
+    // Fallback to a static display if geolocation denied
+    widget.innerHTML = '';
+  }
+}
+
+function getConditionFromCode(code) {
+  if (code === 0) return 'sunny';
+  if (code <= 2) return 'partly cloudy';
+  if (code <= 3) return 'cloudy';
+  if (code <= 49) return 'fog';
+  if (code <= 59) return 'drizzle';
+  if (code <= 69) return 'rain';
+  if (code <= 79) return 'snow';
+  if (code <= 82) return 'rain';
+  if (code <= 99) return 'thunder';
+  return 'cloudy';
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+renderWardrobe();
+updateStorageMeter();
+fetchWeather();
+
+// Splash screen — remove from DOM after animation completes
+setTimeout(() => {
+  const splash = document.getElementById('splash-screen');
+  if (splash) splash.remove();
+}, 3400);
+
+// Init Supabase if keys exist
+if (initSupabase()) {
+  // Pre-fill settings fields
+  const url = localStorage.getItem('supa_url');
+  const key = localStorage.getItem('supa_key');
+  if (document.getElementById('supa-url')) document.getElementById('supa-url').value = url || '';
+  if (document.getElementById('supa-key')) document.getElementById('supa-key').value = key || '';
+}
+</script>
+</body>
+</html>
