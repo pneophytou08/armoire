@@ -2541,6 +2541,50 @@ function compressImage(dataUrl, maxWidth, quality, callback) {
   img.src = dataUrl;
 }
 
+// Upload photo to Supabase Storage
+async function uploadPhotoToSupabase(itemId, dataUrl) {
+  if (!supabaseClient) { console.log('No supabase client'); return null; }
+  if (!dataUrl) return null;
+  if (!dataUrl.startsWith('data:')) {
+    return dataUrl.startsWith('http') ? dataUrl : null;
+  }
+  try {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const path = 'items/' + String(itemId) + '-' + Date.now() + '.jpg';
+    const { data, error } = await supabaseClient.storage.from('photos').upload(path, blob, {
+      contentType: 'image/jpeg',
+      upsert: true
+    });
+    if (error) { console.log('Upload error:', error.message); showToast('Upload error: ' + error.message); return null; }
+    const { data: urlData } = supabaseClient.storage.from('photos').getPublicUrl(path);
+    return urlData.publicUrl;
+  } catch(e) {
+    console.log('Upload exception:', e.message);
+    return null;
+  }
+}
+
+// Upload outfit photo to Supabase Storage
+async function uploadOutfitPhotoToSupabase(outfitName, dataUrl) {
+  if (!supabaseClient || !dataUrl || !dataUrl.startsWith('data:')) return null;
+  try {
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const path = 'outfits/' + (outfitName || 'outfit').replace(/[^a-z0-9]/gi, '-') + '-' + Date.now() + '.jpg';
+    const { data, error } = await supabaseClient.storage.from('photos').upload(path, blob, {
+      contentType: 'image/jpeg',
+      upsert: true
+    });
+    if (error) { console.log('Outfit upload error:', error.message); return null; }
+    const { data: urlData } = supabaseClient.storage.from('photos').getPublicUrl(path);
+    return urlData.publicUrl;
+  } catch(e) {
+    console.log('Outfit upload exception:', e.message);
+    return null;
+  }
+}
+
 // Upload photo to Supabase immediately and return public URL
 // Falls back to storing compressed base64 only if Supabase not connected
 async function processAndStorePhoto(dataUrl, itemId) {
