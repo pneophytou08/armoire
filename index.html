@@ -1200,6 +1200,10 @@ function initSupabase() {
   return false;
 }
 
+function isSupabaseConnected() {
+  return supabaseClient !== null;
+}
+
 function saveSupabaseKeys() {
   const url = document.getElementById('supa-url').value.trim();
   const key = document.getElementById('supa-key').value.trim();
@@ -1209,8 +1213,8 @@ function saveSupabaseKeys() {
   const ok = initSupabase();
   if (ok) {
     showSupabaseStatus('Connected to Supabase ✓', true);
-    showToast('Connected to Supabase ✓');
-    syncToSupabase();
+    showToast('Connected ✓');
+    migrateToSupabase();
   } else {
     showSupabaseStatus('Connection failed — check your keys', false);
   }
@@ -1223,45 +1227,74 @@ function showSupabaseStatus(msg, success) {
   bar.style.background = success ? 'rgba(61,107,82,0.15)' : 'rgba(139,58,47,0.15)';
   bar.style.border = success ? '1px solid var(--green)' : '1px solid var(--red)';
   bar.style.color = success ? 'var(--green)' : 'var(--red)';
+  bar.style.padding = '8px 12px';
+  bar.style.borderRadius = '2px';
   bar.textContent = msg;
 }
 
-function isSupabaseConnected() {
-  return supabaseClient !== null;
-}
+// ── SUPABASE DATA LAYER ───────────────────────────────────────────────────────
 
-// ── PERSISTENCE ──────────────────────────────────────────────────────────────
-function loadData(key, fallback) {
-  try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : fallback; }
-  catch(e) { return fallback; }
-}
-
-function saveData(key, value) {
+async function loadFromSupabase() {
+  if (!supabaseClient) return false;
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    // Load wardrobe
+    const { data: wardrobeData, error: wErr } = await supabaseClient
+      .from('wardrobe')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (wErr) throw wErr;
+
+    if (wardrobeData?.length) {
+      wardrobe = wardrobeData.map(row => ({
+        id: Number(row.id),
+        cat: row.cat,
+        name: row.name,
+        desc: row.description || '',
+        color: row.color || 'white',
+        formality: row.formality || 3,
+        occasions: row.occasions || [],
+        img: row.img_url || null,
+        aiPairings: row.ai_pairings || [],
+      }));
+    }
+
+    // Load outfits
+    const { data: outfitData, error: oErr } = await supabaseClient
+      .from('outfits')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (oErr) throw oErr;
+
+    if (outfitData?.length) {
+      savedOutfits = outfitData.map(row => ({
+        id: row.id,
+        name: row.name,
+        occasions: row.occasions || [],
+        seasons: row.seasons || [],
+        notes: row.notes || '',
+        score: row.score || 0,
+        date: row.date || '',
+        worn: row.worn || false,
+        favorite: row.favorite || false,
+        outfitPhoto: row.outfit_photo_url || null,
+        tucked: row.tucked || null,
+        items: (row.item_ids || []).map(id => wardrobe.find(i => String(i.id) === String(id))).filter(Boolean),
+      }));
+    }
+
     return true;
   } catch(e) {
-    if (e.name === 'QuotaExceededError' || e.code === 22) { showStorageWarning(); }
+    console.log('Supabase load error:', e);
     return false;
   }
 }
 
-function persist() {
-  saveData('armoire_wardrobe', wardrobe);
-  saveData('armoire_saved', savedOutfits);
-  updateStorageMeter();
-  itemsSinceLastBackup++;
-  if (itemsSinceLastBackup >= 5) { itemsSinceLastBackup = 0; setTimeout(showBackupBanner, 800); }
-  // Sync to Supabase if connected
-  if (isSupabaseConnected()) syncToSupabase();
-}
-
-// ── SUPABASE SYNC ─────────────────────────────────────────────────────────────
-async function syncToSupabase() {
+async function saveItemToSupabase(item) {
   if (!supabaseClient) return;
   try {
-    // Upsert wardrobe items (without photo data — photos handled separately)
-    const wardrobeData = wardrobe.map(item => ({
+    await supabaseClient.from('wardrobe').upsert({
       id: String(item.id),
       cat: item.cat,
       name: item.name,
@@ -1270,170 +1303,98 @@ async function syncToSupabase() {
       formality: item.formality || 3,
       occasions: item.occasions || [],
       img_url: item.img && item.img.startsWith('http') ? item.img : null,
-      has_local_img: item.img && item.img.startsWith('data:') ? true : false,
-    }));
-
-    await supabaseClient.from('wardrobe').upsert(wardrobeData, { onConflict: 'id' });
-
-    // Upsert saved outfits (without photo data)
-    const outfitData = savedOutfits.map((o, idx) => ({
-      id: String(idx),
-      name: o.name,
-      occasions: o.occasions || [],
-      seasons: o.seasons || [],
-      notes: o.notes || '',
-      score: o.score || 0,
-      date: o.date || '',
-      worn: o.worn || false,
-      favorite: o.favorite || false,
-      item_ids: o.items?.map(i => String(i.id)) || [],
-    }));
-
-    await supabaseClient.from('outfits').upsert(outfitData, { onConflict: 'id' });
-
-  } catch(e) {
-    console.log('Supabase sync error:', e.message);
-  }
+      ai_pairings: item.aiPairings || [],
+    }, { onConflict: 'id' });
+  } catch(e) { console.log('Save item error:', e); }
 }
 
-async function uploadPhotoToSupabase(itemId, dataUrl) {
-  if (!supabaseClient || !dataUrl || !dataUrl.startsWith('data:')) return null;
+async function deleteItemFromSupabase(id) {
+  if (!supabaseClient) return;
   try {
-    // Convert base64 to blob
-    const res = await fetch(dataUrl);
-    const blob = await res.blob();
-    const path = `items/${itemId}-${Date.now()}.jpg`;
-    const { data, error } = await supabaseClient.storage.from('photos').upload(path, blob, {
-      contentType: 'image/jpeg',
-      upsert: true
-    });
-    if (error) throw error;
-    const { data: urlData } = supabaseClient.storage.from('photos').getPublicUrl(path);
-    return urlData.publicUrl;
-  } catch(e) {
-    console.log('Photo upload error:', e.message);
-    return null;
-  }
+    await supabaseClient.from('wardrobe').delete().eq('id', String(id));
+  } catch(e) { console.log('Delete item error:', e); }
 }
 
-async function uploadOutfitPhotoToSupabase(outfitName, dataUrl) {
-  if (!supabaseClient || !dataUrl || !dataUrl.startsWith('data:')) return null;
+async function saveOutfitToSupabase(outfit, idx) {
+  if (!supabaseClient) return;
   try {
-    const res = await fetch(dataUrl);
-    const blob = await res.blob();
-    const path = `outfits/${outfitName.replace(/\s+/g, '-')}-${Date.now()}.jpg`;
-    const { data, error } = await supabaseClient.storage.from('photos').upload(path, blob, {
-      contentType: 'image/jpeg',
-      upsert: true
-    });
-    if (error) throw error;
-    const { data: urlData } = supabaseClient.storage.from('photos').getPublicUrl(path);
-    return urlData.publicUrl;
+    const id = outfit.id || String(idx) + '_' + Date.now();
+    outfit.id = id;
+    await supabaseClient.from('outfits').upsert({
+      id: String(id),
+      name: outfit.name,
+      occasions: outfit.occasions || [],
+      seasons: outfit.seasons || [],
+      notes: outfit.notes || '',
+      score: outfit.score || 0,
+      date: outfit.date || '',
+      worn: outfit.worn || false,
+      favorite: outfit.favorite || false,
+      outfit_photo_url: outfit.outfitPhoto || null,
+      tucked: outfit.tucked || null,
+      item_ids: outfit.items?.map(i => String(i.id)) || [],
+    }, { onConflict: 'id' });
+  } catch(e) { console.log('Save outfit error:', e); }
+}
+
+async function deleteOutfitFromSupabase(id) {
+  if (!supabaseClient) return;
+  try {
+    await supabaseClient.from('outfits').delete().eq('id', String(id));
+  } catch(e) { console.log('Delete outfit error:', e); }
+}
+
+// Migrate everything from localStorage to Supabase
+async function migrateToSupabase() {
+  if (!supabaseClient) return;
+  showToast('Syncing to Supabase...');
+  try {
+    for (const item of wardrobe) {
+      await saveItemToSupabase(item);
+    }
+    for (let i = 0; i < savedOutfits.length; i++) {
+      await saveOutfitToSupabase(savedOutfits[i], i);
+    }
+    showToast('Synced to Supabase ✓');
   } catch(e) {
-    console.log('Outfit photo upload error:', e.message);
-    return null;
+    console.log('Migration error:', e);
   }
 }
 
-// ── STORAGE METER ────────────────────────────────────────────────────────────
-let itemsSinceLastBackup = 0;
+// ── PERSISTENCE ───────────────────────────────────────────────────────────────
+// Now writes to Supabase primarily, localStorage as fallback cache
 
-function updateStorageMeter() {
-  // Storage meter removed — using Supabase for photos
+function loadData(key, fallback) {
+  try { const d = localStorage.getItem(key); return d ? JSON.parse(d) : fallback; }
+  catch(e) { return fallback; }
 }
 
-function showStorageWarning() {
-  showToast('Storage full — export a backup and remove some photos');
+function saveData(key, value) {
+  try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+  catch(e) { return false; }
 }
 
-function showBackupBanner() {
-  if (document.getElementById('backup-banner')) return;
-  const b = document.createElement('div');
-  b.id = 'backup-banner';
-  b.style.cssText = 'position:fixed;top:56px;left:0;right:0;z-index:150;background:#1E3329;color:#C4A876;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-family:Jost,sans-serif;border-bottom:1px solid #163026;';
-  const msg = document.createElement('span');
-  msg.textContent = 'Back up your wardrobe';
-  const exportBtn = document.createElement('button');
-  exportBtn.textContent = 'Export';
-  exportBtn.style.cssText = 'background:#C4A876;color:#1E3329;border:none;padding:5px 12px;font-size:11px;font-family:Jost,sans-serif;cursor:pointer;margin-right:8px';
-  exportBtn.onclick = exportData;
-  const closeBtn = document.createElement('button');
-  closeBtn.textContent = 'x';
-  closeBtn.style.cssText = 'background:none;border:none;color:#C4A876;font-size:20px;cursor:pointer;line-height:1';
-  closeBtn.onclick = function() { b.remove(); };
-  const btnGroup = document.createElement('div');
-  btnGroup.style.display = 'flex';
-  btnGroup.style.alignItems = 'center';
-  btnGroup.appendChild(exportBtn);
-  btnGroup.appendChild(closeBtn);
-  b.appendChild(msg);
-  b.appendChild(btnGroup);
-  document.body.appendChild(b);
+function persist() {
+  // Save lightweight cache to localStorage (no photos — just text/ids)
+  const cacheWardrobe = wardrobe.map(i => ({ ...i, img: i.img?.startsWith('http') ? i.img : null }));
+  saveData('armoire_wardrobe', cacheWardrobe);
+  saveData('armoire_saved', savedOutfits.map(o => ({ ...o, outfitPhoto: o.outfitPhoto?.startsWith('http') ? o.outfitPhoto : null })));
+  updateStorageMeter();
+  itemsSinceLastBackup++;
+  if (itemsSinceLastBackup >= 5) { itemsSinceLastBackup = 0; setTimeout(showBackupBanner, 800); }
 }
 
-// ── EXPORT / IMPORT ──────────────────────────────────────────────────────────
-function exportData() {
-  const data = { version:1, exported: new Date().toISOString(), wardrobe, savedOutfits };
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'armoire-backup-' + new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).replace(/[\s,]/g,'-') + '.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast('Backup downloaded ✦');
-  const banner = document.getElementById('backup-banner');
-  if (banner) banner.remove();
+async function persistItem(item) {
+  persist();
+  await saveItemToSupabase(item);
 }
 
-function importData(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (!data.wardrobe) throw new Error('Invalid backup file');
-
-      wardrobe = data.wardrobe || [];
-      nextId = Math.max(...wardrobe.map(i => i.id), 99) + 1;
-
-      // Handle both old format (savedOutfits + wornHistory separate)
-      // and new format (savedOutfits with worn flag merged in)
-      let outfits = data.savedOutfits || [];
-
-      // If old backup has wornHistory, merge into savedOutfits
-      if (data.wornHistory?.length) {
-        const existingNames = new Set(outfits.map(o => o.name));
-        data.wornHistory.forEach(h => {
-          if (!existingNames.has(h.name)) {
-            outfits.push({
-              name: h.name,
-              date: h.date,
-              score: h.score || 0,
-              worn: true,
-              favorite: h.favorite || false,
-              occasions: [],
-              seasons: [],
-              items: [],
-              notes: '',
-              outfitPhoto: null,
-            });
-          }
-        });
-      }
-
-      savedOutfits = outfits;
-      persist();
-      renderWardrobe();
-      renderLooks();
-      closeModal('modal-settings');
-      showToast('Restored ' + wardrobe.length + ' items & ' + savedOutfits.length + ' looks ✦');
-    } catch(err) { showToast('Could not restore — ' + err.message); }
-  };
-  reader.readAsText(file);
+async function persistOutfit(outfit, idx) {
+  persist();
+  await saveOutfitToSupabase(outfit, idx);
 }
 
+// ── EXPORT / IMPORT ───────────────────────────────────────────────────────────
 // ── SCORING ──────────────────────────────────────────────────────────────────
 function scoreOutfit(items) {
   if (items.length < 2) return null;
@@ -1774,7 +1735,7 @@ function regenerateEditName() {
   document.getElementById('edit-look-name').value = generateOutfitName(outfit.items || [], occasions, seasons);
 }
 
-function saveEditLook() {
+async function saveEditLook() {
   const outfit = savedOutfits[editingLookIdx];
   if (!outfit) return;
   const name = document.getElementById('edit-look-name').value.trim();
@@ -1785,21 +1746,25 @@ function saveEditLook() {
   outfit.seasons = [...document.querySelectorAll('#edit-look-season .checkbox-btn.active')].map(b => b.textContent);
   if (uploadedData.editlook) outfit.outfitPhoto = uploadedData.editlook;
   persist();
+  await saveOutfitToSupabase(outfit, editingLookIdx);
   closeModal('modal-edit-look');
   renderLooks();
   showToast('Look updated');
 }
 
-function toggleLookFavorite(idx) {
+async function toggleLookFavorite(idx) {
   savedOutfits[idx].favorite = !savedOutfits[idx].favorite;
   persist();
+  await saveOutfitToSupabase(savedOutfits[idx], idx);
   renderLooks();
   showToast(savedOutfits[idx].favorite ? '★ Added to favorites' : 'Removed from favorites');
 }
 
-function deleteLook(idx) {
+async function deleteLook(idx) {
+  const outfit = savedOutfits[idx];
   savedOutfits.splice(idx, 1);
   persist();
+  if (outfit?.id) await deleteOutfitFromSupabase(outfit.id);
   renderLooks();
   showToast('Removed');
 }
@@ -2229,21 +2194,17 @@ async function confirmSave() {
     tucked: tuckedIn,
   };
 
-  savedOutfits.unshift(newOutfit);
-  persist();
-  closeModal('modal-save');
-  showToast('Look saved');
-
-  // Upload outfit photo to Supabase in background
-  if (isSupabaseConnected() && uploadedData.outfit && uploadedData.outfit.startsWith('data:')) {
+  // Upload outfit photo if needed
+  if (uploadedData.outfit && uploadedData.outfit.startsWith('data:') && isSupabaseConnected()) {
     const publicUrl = await uploadOutfitPhotoToSupabase(name, uploadedData.outfit);
-    if (publicUrl) {
-      newOutfit.outfitPhoto = publicUrl;
-      persist();
-      renderLooks();
-    }
+    if (publicUrl) newOutfit.outfitPhoto = publicUrl;
   }
 
+  savedOutfits.unshift(newOutfit);
+  await persistOutfit(newOutfit, 0);
+  closeModal('modal-save');
+  showToast('Look saved');
+  renderLooks();
   selectedItems = {};
   renderBuilder();
 }
@@ -2277,35 +2238,34 @@ async function addItem() {
   document.getElementById('new-desc').value = '';
   document.getElementById('new-url').value = '';
   document.querySelectorAll('#occ-checkboxes .checkbox-btn').forEach(b => b.classList.remove('active'));
-  persist();
   closeModal('modal-add');
   renderWardrobe();
   showToast('Item added');
 
-  // Photo already uploaded to Supabase in previewUpload if connected
-  // Only upload here if still base64 (Supabase wasn't connected during preview)
+  // Photo: upload to Supabase if still base64
   if (isSupabaseConnected() && imgSrc && imgSrc.startsWith('data:')) {
     const publicUrl = await uploadPhotoToSupabase(id, imgSrc);
-    if (publicUrl) {
-      newItem.img = publicUrl;
-      persist();
-      renderWardrobe();
-    }
+    if (publicUrl) newItem.img = publicUrl;
   }
 
-  // Smart background compatibility update for existing items
+  // Save to Supabase
+  await persistItem(newItem);
+  renderWardrobe();
+
+  // Smart AI compatibility update
   if (localStorage.getItem('anthropic_key') && newItem.img) {
     setTimeout(() => updateCompatibilityForNewItem(newItem), 2000);
   }
 }
 
-function deleteItem(id, e) {
+async function deleteItem(id, e) {
   if (e && e.stopPropagation) e.stopPropagation();
   wardrobe = wardrobe.filter(i => i.id !== id);
   if (selectedItems) {
     Object.keys(selectedItems).forEach(cat => { if (selectedItems[cat] === id) delete selectedItems[cat]; });
   }
   persist();
+  await deleteItemFromSupabase(id);
   closeModal('modal-edit-item');
   renderWardrobe();
   showToast('Item removed');
@@ -2349,15 +2309,15 @@ async function saveEditItem() {
   const url = document.getElementById('edit-url').value.trim();
   const newImg = uploadedData.edit || (url && url !== item.img ? url : null);
   if (newImg) item.img = newImg;
-  persist();
+  // Upload photo if needed
+  if (newImg && newImg.startsWith('data:') && isSupabaseConnected()) {
+    const publicUrl = await uploadPhotoToSupabase(editingItemId, newImg);
+    if (publicUrl) item.img = publicUrl;
+  }
+  await persistItem(item);
   closeModal('modal-edit-item');
   renderWardrobe();
   showToast('Item updated');
-  // Only upload if still base64 (wasn't already uploaded in previewUpload)
-  if (newImg && newImg.startsWith('data:') && isSupabaseConnected()) {
-    const publicUrl = await uploadPhotoToSupabase(editingItemId, newImg);
-    if (publicUrl) { item.img = publicUrl; persist(); renderWardrobe(); }
-  }
 }
 
 function openEditPhoto(id, e) {
@@ -2975,24 +2935,51 @@ function getConditionFromCode(code) {
 }
 
 // ── INIT ──────────────────────────────────────────────────────────────────────
-renderWardrobe();
-updateStorageMeter();
-fetchWeather();
+async function initApp() {
+  updateStorageMeter();
+  fetchWeather();
 
-// Splash screen — remove from DOM after animation completes
-setTimeout(() => {
-  const splash = document.getElementById('splash-screen');
-  if (splash) splash.remove();
-}, 3400);
-
-// Init Supabase if keys exist
-if (initSupabase()) {
   // Pre-fill settings fields
-  const url = localStorage.getItem('supa_url');
-  const key = localStorage.getItem('supa_key');
-  if (document.getElementById('supa-url')) document.getElementById('supa-url').value = url || '';
-  if (document.getElementById('supa-key')) document.getElementById('supa-key').value = key || '';
+  const supaUrl = localStorage.getItem('supa_url');
+  const supaKey = localStorage.getItem('supa_key');
+  const anthKey = localStorage.getItem('anthropic_key');
+  if (document.getElementById('supa-url') && supaUrl) document.getElementById('supa-url').value = supaUrl;
+  if (document.getElementById('supa-key') && supaKey) document.getElementById('supa-key').value = supaKey;
+  if (document.getElementById('anthropic-key') && anthKey) document.getElementById('anthropic-key').value = anthKey;
+  if (supabaseClient) showSupabaseStatus('Connected to Supabase ✓', true);
+  if (anthKey) showAnthropicStatus('AI analysis ready ✓', true);
+
+  // Try Supabase first
+  if (initSupabase()) {
+    const loaded = await loadFromSupabase();
+    if (loaded && wardrobe.length) {
+      nextId = Math.max(...wardrobe.map(i => i.id), 99) + 1;
+      renderWardrobe();
+      showToast('Wardrobe loaded ✓');
+    } else {
+      // Supabase empty — load from localStorage and migrate
+      wardrobe = loadData('armoire_wardrobe', DEFAULT_WARDROBE);
+      savedOutfits = loadData('armoire_saved', []);
+      nextId = Math.max(...wardrobe.map(i => i.id), 99) + 1;
+      renderWardrobe();
+      if (wardrobe.length > 1) migrateToSupabase();
+    }
+  } else {
+    // No Supabase — use localStorage cache
+    wardrobe = loadData('armoire_wardrobe', DEFAULT_WARDROBE);
+    savedOutfits = loadData('armoire_saved', []);
+    nextId = Math.max(...wardrobe.map(i => i.id), 99) + 1;
+    renderWardrobe();
+  }
+
+  // Remove splash after animation
+  setTimeout(() => {
+    const splash = document.getElementById('splash-screen');
+    if (splash) splash.remove();
+  }, 3400);
 }
+
+initApp();
 </script>
 </body>
 </html>
