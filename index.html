@@ -1394,6 +1394,42 @@ async function persistOutfit(outfit, idx) {
   await saveOutfitToSupabase(outfit, idx);
 }
 
+// ── STORAGE METER ────────────────────────────────────────────────────────────
+let itemsSinceLastBackup = 0;
+
+function updateStorageMeter() {
+  // Storage meter removed — using Supabase for data
+}
+
+function showStorageWarning() {
+  showToast('Consider exporting a backup');
+}
+
+function showBackupBanner() {
+  if (document.getElementById('backup-banner')) return;
+  const b = document.createElement('div');
+  b.id = 'backup-banner';
+  b.style.cssText = 'position:fixed;top:56px;left:0;right:0;z-index:150;background:#1E3329;color:#C4A876;padding:11px 16px;display:flex;align-items:center;justify-content:space-between;font-size:12px;font-family:Jost,sans-serif;border-bottom:1px solid #163026;';
+  const msg = document.createElement('span');
+  msg.textContent = 'Back up your wardrobe';
+  const exportBtn = document.createElement('button');
+  exportBtn.textContent = 'Export';
+  exportBtn.style.cssText = 'background:#C4A876;color:#1E3329;border:none;padding:5px 12px;font-size:11px;font-family:Jost,sans-serif;cursor:pointer;margin-right:8px';
+  exportBtn.onclick = exportData;
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = 'x';
+  closeBtn.style.cssText = 'background:none;border:none;color:#C4A876;font-size:20px;cursor:pointer;line-height:1';
+  closeBtn.onclick = function() { b.remove(); };
+  const btnGroup = document.createElement('div');
+  btnGroup.style.display = 'flex';
+  btnGroup.style.alignItems = 'center';
+  btnGroup.appendChild(exportBtn);
+  btnGroup.appendChild(closeBtn);
+  b.appendChild(msg);
+  b.appendChild(btnGroup);
+  document.body.appendChild(b);
+}
+
 // ── EXPORT / IMPORT ───────────────────────────────────────────────────────────
 function exportData() {
   const data = { version:2, exported: new Date().toISOString(), wardrobe, savedOutfits };
