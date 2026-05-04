@@ -1395,6 +1395,68 @@ async function persistOutfit(outfit, idx) {
 }
 
 // ── EXPORT / IMPORT ───────────────────────────────────────────────────────────
+function exportData() {
+  const data = { version:2, exported: new Date().toISOString(), wardrobe, savedOutfits };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'armoire-backup-' + new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}).replace(/[\s,]/g,'-') + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('Backup downloaded ✦');
+  const banner = document.getElementById('backup-banner');
+  if (banner) banner.remove();
+}
+
+async function importData(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.wardrobe) throw new Error('Invalid backup file');
+
+      wardrobe = data.wardrobe || [];
+      nextId = Math.max(...wardrobe.map(i => i.id), 99) + 1;
+
+      // Handle both old and new backup formats
+      let outfits = data.savedOutfits || [];
+      if (data.wornHistory?.length) {
+        const existingNames = new Set(outfits.map(o => o.name));
+        data.wornHistory.forEach(h => {
+          if (!existingNames.has(h.name)) {
+            outfits.push({
+              name: h.name, date: h.date, score: h.score || 0,
+              worn: true, favorite: h.favorite || false,
+              occasions: [], seasons: [], items: [], notes: '', outfitPhoto: null,
+            });
+          }
+        });
+      }
+      savedOutfits = outfits;
+
+      persist();
+      renderWardrobe();
+      renderLooks();
+      closeModal('modal-settings');
+      showToast('Restored ' + wardrobe.length + ' items & ' + savedOutfits.length + ' looks ✦');
+
+      // Sync everything to Supabase
+      if (isSupabaseConnected()) {
+        setTimeout(async () => {
+          showToast('Syncing to Supabase...');
+          await migrateToSupabase();
+          showToast('Synced to Supabase ✓');
+        }, 500);
+      }
+    } catch(err) {
+      showToast('Could not restore — ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
 // ── SCORING ──────────────────────────────────────────────────────────────────
 function scoreOutfit(items) {
   if (items.length < 2) return null;
