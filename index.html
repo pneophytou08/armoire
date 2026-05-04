@@ -1255,8 +1255,11 @@ async function loadFromSupabase() {
         formality: row.formality || 3,
         occasions: row.occasions || [],
         img: row.img_url || null,
-        aiPairings: row.ai_pairings || [],
+        aiPairings: Array.isArray(row.ai_pairings) ? row.ai_pairings : [],
       }));
+      // Update localStorage cache with Supabase data including photo URLs
+      const cacheWardrobe = wardrobe.map(i => ({ ...i }));
+      try { localStorage.setItem('armoire_wardrobe', JSON.stringify(cacheWardrobe)); } catch(e) {}
     }
 
     // Load outfits
@@ -1345,19 +1348,42 @@ async function deleteOutfitFromSupabase(id) {
 }
 
 // Migrate everything from localStorage to Supabase
+// Handles base64 photos by uploading them to Supabase Storage first
 async function migrateToSupabase() {
   if (!supabaseClient) return;
   showToast('Syncing to Supabase...');
   try {
+    let photoCount = 0;
     for (const item of wardrobe) {
+      // If item has base64 photo, upload to Supabase Storage first
+      if (item.img && item.img.startsWith('data:')) {
+        showToast('Uploading photo: ' + item.name);
+        const publicUrl = await uploadPhotoToSupabase(item.id, item.img);
+        if (publicUrl) {
+          item.img = publicUrl;
+          photoCount++;
+        }
+      }
       await saveItemToSupabase(item);
+      // Small delay to avoid rate limiting
+      await new Promise(r => setTimeout(r, 100));
     }
     for (let i = 0; i < savedOutfits.length; i++) {
-      await saveOutfitToSupabase(savedOutfits[i], i);
+      const outfit = savedOutfits[i];
+      // Upload outfit photo if base64
+      if (outfit.outfitPhoto && outfit.outfitPhoto.startsWith('data:')) {
+        const publicUrl = await uploadOutfitPhotoToSupabase(outfit.name, outfit.outfitPhoto);
+        if (publicUrl) outfit.outfitPhoto = publicUrl;
+      }
+      await saveOutfitToSupabase(outfit, i);
     }
-    showToast('Synced to Supabase ✓');
+    // Save updated wardrobe with Supabase URLs back to localStorage cache
+    persist();
+    renderWardrobe();
+    showToast('Synced ✓' + (photoCount ? ' — ' + photoCount + ' photos uploaded' : ''));
   } catch(e) {
     console.log('Migration error:', e);
+    showToast('Sync error — check console');
   }
 }
 
