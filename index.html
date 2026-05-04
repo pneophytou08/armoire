@@ -2626,8 +2626,8 @@ async function analyzeAllItems() {
       let base64, mediaType;
 
       if (imageData.startsWith('data:')) {
-        base64 = imageData.split(',')[1];
-        mediaType = imageData.split(';')[0].split(':')[1] || 'image/jpeg';
+        base64 = await convertToJpegBase64(imageData);
+        mediaType = 'image/jpeg';
       } else if (imageData.startsWith('http')) {
         // Fetch from Supabase URL and convert to base64
         try {
@@ -2837,6 +2837,24 @@ async function analyzeEditPhoto() {
   await runAnalysis(img, key, 'edit');
 }
 
+// Convert any image format to JPEG base64 for API compatibility
+async function convertToJpegBase64(dataUrl) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      resolve(jpegDataUrl.split(',')[1]);
+    };
+    img.onerror = () => resolve(dataUrl.split(',')[1]);
+    img.src = dataUrl;
+  });
+}
+
 async function runAnalysis(imageData, key, mode) {
   const statusId = mode === 'add' ? 'analyze-status' : 'analyze-edit-status';
   const btnId = mode === 'add' ? 'analyze-btn' : 'analyze-edit-btn';
@@ -2849,8 +2867,9 @@ async function runAnalysis(imageData, key, mode) {
   if (btn) btn.disabled = true;
 
   try {
-    const base64 = imageData.split(',')[1];
-    const mediaType = imageData.split(';')[0].split(':')[1] || 'image/jpeg';
+    // Always convert to JPEG for Claude API compatibility
+    const base64 = await convertToJpegBase64(imageData);
+    const mediaType = 'image/jpeg';
 
     // Build wardrobe summary for pairing suggestions
     const wardrobeSummary = wardrobe.map(i =>
