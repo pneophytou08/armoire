@@ -778,6 +778,13 @@ input:focus, select:focus { border-color: var(--gold); }
             </div>
           </div>
           <div id="weather-quip" style="font-size:11px;color:var(--mid);font-style:italic;letter-spacing:0.3px;display:none"></div>
+          <div id="tuck-toggle" style="display:none;align-items:center;gap:8px">
+            <span style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--mid)">Shirt</span>
+            <div style="display:flex;border:1px solid var(--border);border-radius:1px;overflow:hidden">
+              <button id="tuck-in-btn" onclick="setTuck(true)" style="padding:4px 12px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-family:Jost,sans-serif;background:none;border:none;cursor:pointer;color:var(--mid);transition:all 0.15s">Tucked</button>
+              <button id="tuck-out-btn" onclick="setTuck(false)" style="padding:4px 12px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-family:Jost,sans-serif;background:none;border:none;cursor:pointer;color:var(--mid);transition:all 0.15s;border-left:1px solid var(--border)">Untucked</button>
+            </div>
+          </div>
         </div>
         <div id="outfit-flat-lay" class="outfit-flat-lay">
           <div class="outfit-empty">Select pieces below to build your outfit</div>
@@ -1386,16 +1393,43 @@ function importData(input) {
   reader.onload = e => {
     try {
       const data = JSON.parse(e.target.result);
-      if (!data.wardrobe) throw new Error('Invalid');
-      wardrobe = data.wardrobe;
-      savedOutfits = data.savedOutfits || [];
+      if (!data.wardrobe) throw new Error('Invalid backup file');
 
+      wardrobe = data.wardrobe || [];
       nextId = Math.max(...wardrobe.map(i => i.id), 99) + 1;
+
+      // Handle both old format (savedOutfits + wornHistory separate)
+      // and new format (savedOutfits with worn flag merged in)
+      let outfits = data.savedOutfits || [];
+
+      // If old backup has wornHistory, merge into savedOutfits
+      if (data.wornHistory?.length) {
+        const existingNames = new Set(outfits.map(o => o.name));
+        data.wornHistory.forEach(h => {
+          if (!existingNames.has(h.name)) {
+            outfits.push({
+              name: h.name,
+              date: h.date,
+              score: h.score || 0,
+              worn: true,
+              favorite: h.favorite || false,
+              occasions: [],
+              seasons: [],
+              items: [],
+              notes: '',
+              outfitPhoto: null,
+            });
+          }
+        });
+      }
+
+      savedOutfits = outfits;
       persist();
       renderWardrobe();
+      renderLooks();
       closeModal('modal-settings');
-      showToast('Restored ' + wardrobe.length + ' items ✦');
-    } catch(err) { showToast('Invalid backup file'); }
+      showToast('Restored ' + wardrobe.length + ' items & ' + savedOutfits.length + ' looks ✦');
+    } catch(err) { showToast('Could not restore — ' + err.message); }
   };
   reader.readAsText(file);
 }
@@ -1471,15 +1505,23 @@ function getStylingNote(items, score) {
 function getStylingNoteFromScore(items, score) {
   const top = items.find(i => i.cat === 'Top');
   const bottom = items.find(i => i.cat === 'Bottoms');
-  if (score.total >= 85) {
-    if (top?.color === 'pattern') return 'The striped shirt is your anchor — everything else stays solid and the look sings.';
-    if (top && bottom) return `${top.name} and ${bottom.name} share a natural tonal relationship. A well-balanced combination.`;
-    return 'Well-balanced combination — the pieces work naturally together.';
+
+  // Tuck note
+  let tuckNote = '';
+  if (top && tuckedIn !== null) {
+    if (tuckedIn) tuckNote = ' Tucked in — sharp and intentional.';
+    else tuckNote = ' Left out — relaxed but considered.';
   }
-  if (score.formality < 60) return 'The formality levels differ here — consider whether the occasion calls for more consistency.';
-  if (score.color < 65) return 'A bold color pairing. Keep accessories neutral to avoid competing tones.';
-  if (score.occasion < 50) return 'These pieces are pulled from different occasions — an interesting mix.';
-  return 'A solid combination. Small adjustments could push the score higher.';
+
+  if (score.total >= 85) {
+    if (top?.color === 'pattern') return 'The striped shirt is your anchor — everything else stays solid and the look sings.' + tuckNote;
+    if (top && bottom) return `${top.name} and ${bottom.name} share a natural tonal relationship. A well-balanced combination.` + tuckNote;
+    return 'Well-balanced combination — the pieces work naturally together.' + tuckNote;
+  }
+  if (score.formality < 60) return 'The formality levels differ here — consider whether the occasion calls for more consistency.' + tuckNote;
+  if (score.color < 65) return 'A bold color pairing. Keep accessories neutral to avoid competing tones.' + tuckNote;
+  if (score.occasion < 50) return 'These pieces are pulled from different occasions — an interesting mix.' + tuckNote;
+  return 'A solid combination. Small adjustments could push the score higher.' + tuckNote;
 }
 
 function scoreClass(s) { return s >= 80 ? 'high' : s >= 65 ? 'mid' : 'low'; }
@@ -1622,6 +1664,9 @@ function renderFlatLay() {
       `;
     }).join('');
   }
+
+  // ── Tuck toggle ──────────────────────────────────────────────────────────
+  updateTuckToggle(selected);
 
   // ── Score ─────────────────────────────────────────────────────────────────
   if (selected.length >= 2) {
@@ -1830,12 +1875,14 @@ function toggleSelect(cat, id) {
 function clearOutfit() {
   selectedItems = {};
   lastVibeReason = null;
+  tuckedIn = null;
   const vibeInput = document.getElementById('vibe-input');
   if (vibeInput) vibeInput.value = '';
   renderBuilder();
 }
 
 let vibeCriteria = 'any';
+let tuckedIn = null; // null = not set, true = tucked, false = untucked
 let lastVibeReason = null;
 
 function getVibeReason(vibe, occasion, season) {
@@ -1877,6 +1924,40 @@ function getVibeReason(vibe, occasion, season) {
   return casualReasons[Math.floor(Math.random() * casualReasons.length)];
 }
 
+function setTuck(tucked) {
+  tuckedIn = tucked;
+  const inBtn = document.getElementById('tuck-in-btn');
+  const outBtn = document.getElementById('tuck-out-btn');
+  if (inBtn && outBtn) {
+    inBtn.style.background = tucked ? 'var(--ink)' : 'none';
+    inBtn.style.color = tucked ? 'var(--paper)' : 'var(--mid)';
+    outBtn.style.background = !tucked ? 'var(--ink)' : 'none';
+    outBtn.style.color = !tucked ? 'var(--paper)' : 'var(--mid)';
+  }
+  // Re-render to update styling note
+  renderFlatLay();
+}
+
+function updateTuckToggle(items) {
+  const toggle = document.getElementById('tuck-toggle');
+  const hasTop = items.some(i => i.cat === 'Top');
+  if (!toggle) return;
+  if (hasTop) {
+    toggle.style.display = 'flex';
+    // Auto-set based on top's formality if not manually set
+    if (tuckedIn === null) {
+      const top = items.find(i => i.cat === 'Top');
+      if (top) {
+        const autoTuck = top.formality >= 4;
+        setTuck(autoTuck);
+      }
+    }
+  } else {
+    toggle.style.display = 'none';
+    tuckedIn = null;
+  }
+}
+
 function toggleVibeCriteria() {
   const panel = document.getElementById('vibe-criteria');
   const label = document.getElementById('vibe-criteria-label');
@@ -1914,40 +1995,118 @@ function surpriseMe() {
   showToast('Surprise outfit generated ✦');
 }
 
-function vibeGenerate() {
-  const vibe = document.getElementById('vibe-input').value.trim().toLowerCase();
+async function vibeGenerate() {
+  const vibe = document.getElementById('vibe-input').value.trim();
+  const key = localStorage.getItem('anthropic_key');
 
-  // Keyword → occasion/season mapping
+  // If no API key or no vibe text — fall back to criteria-based filtering
+  if (!key || !vibe) {
+    vibeGenerateFallback(vibe);
+    return;
+  }
+
+  // Show loading state
+  const cookBtn = document.querySelector('.btn-primary[onclick="vibeGenerate()"]');
+  if (cookBtn) { cookBtn.disabled = true; cookBtn.textContent = 'Cooking...'; }
+  showToast('Asking Claude to cook...');
+
+  try {
+    // Build wardrobe summary grouped by category
+    const wardrobeByCategory = {};
+    CAT_ORDER.forEach(cat => {
+      const items = wardrobe.filter(i => i.cat === cat);
+      if (items.length) wardrobeByCategory[cat] = items.map(i => ({ id: i.id, name: i.name, color: i.color, formality: i.formality, desc: i.desc }));
+    });
+
+    // Include locked items in context
+    const lockedItems = Object.entries(selectedItems).map(([cat, id]) => {
+      const item = wardrobe.find(i => i.id === id);
+      return item ? `${item.name} (${cat}) — LOCKED IN` : '';
+    }).filter(Boolean);
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 400,
+        messages: [{
+          role: 'user',
+          content: `You are a personal stylist. The user wants an outfit for: "${vibe}"
+${lockedItems.length ? 'Already selected (keep these): ' + lockedItems.join(', ') : ''}
+${vibeCriteria !== 'any' ? 'Occasion filter: ' + vibeCriteria : ''}
+
+Available wardrobe:
+${JSON.stringify(wardrobeByCategory, null, 2)}
+
+Pick the BEST outfit for this vibe. Return ONLY a JSON object:
+{
+  "selections": {"Top": itemId, "Bottoms": itemId, "Shoes": itemId},
+  "reason": "one short punchy sentence max 8 words on why this works"
+}
+Only include categories where you have a strong pick. Use exact numeric IDs. Skip categories if nothing fits well.`
+        }]
+      })
+    });
+
+    if (!response.ok) throw new Error('API error ' + response.status);
+
+    const data = await response.json();
+    const text = data.content[0].text.trim().replace(/```json|```/g, '').trim();
+    const result = JSON.parse(text);
+
+    if (result.selections) {
+      Object.entries(result.selections).forEach(([cat, id]) => {
+        if (!selectedItems[cat]) {
+          const numId = Number(id);
+          const item = wardrobe.find(i => i.id === numId);
+          if (item) selectedItems[cat] = numId;
+        }
+      });
+    }
+
+    lastVibeReason = result.reason || null;
+    renderBuilder();
+    showToast('Cooked ✦');
+
+  } catch(err) {
+    console.log('Vibe generate error:', err);
+    vibeGenerateFallback(vibe);
+    showToast('Generated ✦');
+  } finally {
+    if (cookBtn) { cookBtn.disabled = false; cookBtn.textContent = 'Cook'; }
+  }
+}
+
+function vibeGenerateFallback(vibe) {
+  const v = (vibe || '').toLowerCase();
   const vibeMap = {
-    office: 'Office', work: 'Office', meeting: 'Office', professional: 'Office', formal: 'Office',
-    casual: 'Casual', relaxed: 'Casual', chill: 'Casual', weekend: 'Casual', errands: 'Casual',
-    smart: 'Smart Casual', dinner: 'Smart Casual', date: 'Smart Casual', brunch: 'Smart Casual', lunch: 'Smart Casual',
-    evening: 'Evening', night: 'Evening', party: 'Evening', rooftop: 'Evening', cocktail: 'Evening', event: 'Evening',
-    summer: null, spring: null, fall: null, winter: null, warm: null, hot: null, cold: null, cool: null
+    office: 'Office', work: 'Office', meeting: 'Office', professional: 'Office',
+    casual: 'Casual', relaxed: 'Casual', chill: 'Casual', weekend: 'Casual',
+    smart: 'Smart Casual', dinner: 'Smart Casual', date: 'Smart Casual', brunch: 'Smart Casual',
+    evening: 'Evening', night: 'Evening', party: 'Evening', wedding: 'Evening',
+    cocktail: 'Evening', event: 'Evening', formal: 'Evening',
   };
-
   const seasonMap = {
     summer: 'Summer', spring: 'Spring', fall: 'Fall', autumn: 'Fall',
     winter: 'Winter', warm: 'Summer', hot: 'Summer', cold: 'Winter', cool: 'Fall'
   };
-
-  // Detect occasion from vibe text
   let detectedOccasion = vibeCriteria !== 'any' ? vibeCriteria : null;
   let detectedSeason = null;
-
   for (const [keyword, occasion] of Object.entries(vibeMap)) {
-    if (vibe.includes(keyword)) {
-      if (occasion) detectedOccasion = occasion;
-    }
+    if (v.includes(keyword)) { detectedOccasion = occasion; break; }
   }
   for (const [keyword, season] of Object.entries(seasonMap)) {
-    if (vibe.includes(keyword)) detectedSeason = season;
+    if (v.includes(keyword)) { detectedSeason = season; break; }
   }
-
-  // Generate outfit filtered by detected occasion + season
   CAT_ORDER.forEach(cat => {
     const locked = selectedItems[cat];
-    if (locked) return; // respect locked items
+    if (locked) return;
     let items = wardrobe.filter(i => i.cat === cat);
     if (detectedOccasion) {
       const filtered = items.filter(i => i.occasions?.includes(detectedOccasion));
@@ -1959,12 +2118,8 @@ function vibeGenerate() {
     }
     if (items.length) selectedItems[cat] = items[Math.floor(Math.random() * items.length)].id;
   });
-
-  // Generate a reason blurb
-  lastVibeReason = getVibeReason(vibe, detectedOccasion, detectedSeason);
+  lastVibeReason = getVibeReason(v, detectedOccasion, detectedSeason);
   renderBuilder();
-  const label = detectedOccasion ? detectedOccasion : vibe ? 'your vibe' : 'a random look';
-  showToast('Generated for ' + label + ' ✦');
 }
 
 // ── SAVE OUTFIT ───────────────────────────────────────────────────────────────
@@ -2070,6 +2225,7 @@ async function confirmSave() {
     outfitPhoto: uploadedData.outfit || null,
     worn: worn,
     favorite: false,
+    tucked: tuckedIn,
   };
 
   savedOutfits.unshift(newOutfit);
@@ -2134,6 +2290,11 @@ async function addItem() {
       persist();
       renderWardrobe();
     }
+  }
+
+  // Smart background compatibility update for existing items
+  if (localStorage.getItem('anthropic_key') && newItem.img) {
+    setTimeout(() => updateCompatibilityForNewItem(newItem), 2000);
   }
 }
 
@@ -2425,6 +2586,91 @@ async function analyzeAllItems() {
   btn.disabled = false;
   btn.textContent = '✦ Analyze All Wardrobe Items';
   showToast('Wardrobe analysis complete ✓');
+}
+
+// ── SMART COMPATIBILITY UPDATE ───────────────────────────────────────────────
+// When a new item is added, update compatibility for existing items in other categories
+async function updateCompatibilityForNewItem(newItem) {
+  const key = localStorage.getItem('anthropic_key');
+  if (!key || !newItem.img) return;
+
+  // Only update items in OTHER categories
+  const relatedItems = wardrobe.filter(i =>
+    i.id !== newItem.id &&
+    i.cat !== newItem.cat &&
+    i.img && // must have a photo
+    !i.aiPairings?.some(p => p.items?.some(name =>
+      name.toLowerCase().includes(newItem.name.toLowerCase())
+    ))
+  );
+
+  if (!relatedItems.length) return;
+
+  // Silently analyze the new item with full wardrobe context
+  try {
+    let imageData = newItem.img;
+    if (!imageData.startsWith('data:')) {
+      const fetchRes = await fetch(imageData);
+      const blob = await fetchRes.blob();
+      imageData = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.readAsDataURL(blob);
+      });
+    }
+
+    const base64 = imageData.split(',')[1];
+    const mediaType = imageData.split(';')[0].split(':')[1] || 'image/jpeg';
+    const wardrobeSummary = wardrobe
+      .filter(i => i.id !== newItem.id)
+      .map(i => `${i.name} (${i.cat}, ${i.color}, formality ${i.formality})`)
+      .join(', ');
+
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 600,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+            { type: 'text', text: `Analyze this new clothing item against this wardrobe: ${wardrobeSummary}. Return ONLY JSON:
+{
+  "color": "one of: white,black,navy,blue,grey,beige,brown,green,pink,red,pattern",
+  "formality": 1-5,
+  "occasions": ["Casual","Smart Casual","Office","Evening","Weekend"],
+  "desc": "3-6 word description",
+  "pairings": [{"occasion":"","items":[],"note":""}]
+}
+Suggest 2-3 best pairings using exact item names from the wardrobe.` }
+          ]
+        }]
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const text = data.content[0].text.trim().replace(/```json|```/g, '').trim();
+      const result = JSON.parse(text);
+      if (result.color) newItem.color = result.color;
+      if (result.formality) newItem.formality = result.formality;
+      if (result.occasions?.length) newItem.occasions = result.occasions;
+      if (result.desc) newItem.desc = result.desc;
+      if (result.pairings) newItem.aiPairings = result.pairings;
+      persist();
+      renderWardrobe();
+      showToast('AI pairings updated ✦');
+    }
+  } catch(e) {
+    console.log('Compatibility update error:', e);
+  }
 }
 
 function saveAnthropicKey() {
