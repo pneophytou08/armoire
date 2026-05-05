@@ -2544,7 +2544,6 @@ function previewUpload(type, input) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = async e => {
-    // First compress for preview display
     compressImage(e.target.result, 600, 0.7, async compressed => {
       // Show preview immediately
       const previewId = type === 'add' ? 'add-upload-preview' : type === 'edit' ? 'edit-upload-preview' : type === 'editlook' ? 'edit-look-photo-preview' : 'outfit-photo-preview';
@@ -2552,33 +2551,44 @@ function previewUpload(type, input) {
       prev.src = compressed;
       prev.style.display = 'block';
 
-      // Store compressed locally for immediate use
+      // Always keep base64 in uploadedData for analysis
+      // Store separately from the Supabase URL
       uploadedData[type] = compressed;
+      uploadedData[type + '_base64'] = compressed; // Keep base64 for AI analysis
 
-      // If Supabase connected — upload immediately and store URL instead of base64
-      if (isSupabaseConnected() && (type === 'add' || type === 'edit' || type === 'editlook' || type === 'outfit')) {
-        const tempId = editingItemId || Date.now();
-        const publicUrl = await uploadPhotoToSupabase(tempId, compressed);
-        if (publicUrl) {
-          uploadedData[type] = publicUrl; // Replace base64 with URL
-          showToast('Photo uploaded to cloud ✓');
-        }
-      }
-
-      // Show analyze button if Anthropic key exists
+      // Show analyze button immediately
       if (type === 'add') {
         const btn = document.getElementById('analyze-btn');
+        const statusEl = document.getElementById('analyze-status');
         if (btn && localStorage.getItem('anthropic_key')) {
           btn.style.display = 'block';
-          setTimeout(() => analyzePhoto(), 300);
+          if (statusEl) { statusEl.style.display = 'none'; }
         }
       }
       if (type === 'edit') {
         const btn = document.getElementById('analyze-edit-btn');
         if (btn && localStorage.getItem('anthropic_key')) {
           btn.style.display = 'block';
-          setTimeout(() => analyzeEditPhoto(), 300);
         }
+      }
+
+      // Upload to Supabase in background (don't block analyze)
+      if (isSupabaseConnected() && (type === 'add' || type === 'edit' || type === 'editlook' || type === 'outfit')) {
+        const tempId = editingItemId || Date.now();
+        uploadPhotoToSupabase(tempId, compressed).then(publicUrl => {
+          if (publicUrl) {
+            uploadedData[type] = publicUrl; // Update to URL for saving
+            showToast('Photo uploaded to cloud ✓');
+          }
+        });
+      }
+
+      // Auto-analyze using the base64 data
+      if (type === 'add' && localStorage.getItem('anthropic_key')) {
+        setTimeout(() => analyzePhoto(), 500);
+      }
+      if (type === 'edit' && localStorage.getItem('anthropic_key')) {
+        setTimeout(() => analyzeEditPhoto(), 500);
       }
     });
   };
@@ -2655,6 +2665,24 @@ async function processAndStorePhoto(dataUrl, itemId) {
 }
 
 // ── ANTHROPIC AI ANALYSIS ────────────────────────────────────────────────────
+function saveAnthropicKey() {
+  const key = document.getElementById('anthropic-key').value.trim();
+  if (!key) { showToast('Please enter your API key'); return; }
+  localStorage.setItem('anthropic_key', key);
+  showAnthropicStatus('AI analysis ready ✓', true);
+  showToast('AI key saved ✓');
+}
+
+function showAnthropicStatus(msg, success) {
+  const bar = document.getElementById('anthropic-status');
+  if (!bar) return;
+  bar.style.display = 'block';
+  bar.style.background = success ? 'rgba(61,107,82,0.15)' : 'rgba(139,58,47,0.15)';
+  bar.style.border = success ? '1px solid var(--green)' : '1px solid var(--red)';
+  bar.style.color = success ? 'var(--green)' : 'var(--red)';
+  bar.textContent = msg;
+}
+
 async function analyzeAllItems() {
   const key = localStorage.getItem('anthropic_key');
   if (!key) { showToast('Add your Anthropic API key first'); return; }
@@ -2784,10 +2812,18 @@ async function analyzeAllItems() {
 }
 
 
+async function analyzePhoto() {
+  const key = localStorage.getItem('anthropic_key');
+  if (!key) { showToast('Add your Anthropic API key in Settings first'); return; }
+  const img = uploadedData.add_base64 || uploadedData.add;
+  if (!img) { showToast('Upload a photo first'); return; }
+  await runAnalysis(img, key, 'add');
+}
+
 async function analyzeEditPhoto() {
   const key = localStorage.getItem('anthropic_key');
   if (!key) { showToast('Add your Anthropic API key in Settings first'); return; }
-  const img = uploadedData.edit;
+  const img = uploadedData.edit_base64 || uploadedData.edit;
   if (!img) { showToast('Upload a photo first'); return; }
   await runAnalysis(img, key, 'edit');
 }
