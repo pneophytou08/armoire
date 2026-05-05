@@ -1655,7 +1655,10 @@ function scoreClass(s) { return s >= 80 ? 'high' : s >= 65 ? 'mid' : 'low'; }
 // ── RENDER: WARDROBE ─────────────────────────────────────────────────────────
 let currentWardrobeFilter = 'all';
 
+
+
 function renderWardrobe(filter = 'all') {
+  currentWardrobeFilter = filter;
   currentWardrobeFilter = filter;
   // Dynamically build filter buttons based on what categories exist in wardrobe
   const filterContainer = document.getElementById('wardrobe-filter-btns');
@@ -1688,7 +1691,7 @@ function renderWardrobe(filter = 'all') {
   grid.innerHTML = items.map(item => `
     <div class="item-card" id="wc-${item.id}" onclick="openEditItem(${item.id}, event)" style="cursor:pointer">
       <div class="sel-badge">✓</div>
-      <button onclick="toggleItemFavorite(${item.id}, event)" style="position:absolute;top:7px;right:7px;background:none;border:none;font-size:18px;cursor:pointer;z-index:3;line-height:1;padding:2px" title="Favorite">${item.favorite ? '★' : '☆'}</button>
+      <button onclick="toggleItemFavorite(${item.id}, event)" style="position:absolute;top:7px;right:7px;background:none;border:none;font-size:16px;cursor:pointer;z-index:3;line-height:1;padding:2px;color:${item.favorite ? '#C4A876' : 'rgba(255,255,255,0.6)'}" title="Favorite">${item.favorite ? '★' : '☆'}</button>
       ${item.img ? `<img class="item-photo" src="${item.img}" alt="${item.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
       <div class="item-placeholder" style="${item.img ? 'display:none' : ''}">${CAT_EMOJI[item.cat]}</div>
       <div class="item-info">
@@ -1799,20 +1802,30 @@ function renderFlatLay() {
     `;
   } else {
     // Default flat lay grid
-    flatLay.innerHTML = selected.map(item => {
+    // Ordered flat lay: top row = tops/jackets/accessories, bottom row = bottoms/belts/shoes
+    const topRowCats = ['Top', 'Jackets & Outerwear', 'Hat', 'Watch', 'Accessory'];
+    const bottomRowCats = ['Bottoms', 'Belt', 'Shoes', 'Socks'];
+    const topRow = selected.filter(i => topRowCats.includes(i.cat) || !bottomRowCats.includes(i.cat));
+    const bottomRow = selected.filter(i => bottomRowCats.includes(i.cat));
+    const renderFlatItem = item => {
       const sizeClass = item.cat === 'Top' ? 'flat-lay-top' : item.cat === 'Bottoms' ? 'flat-lay-trousers' : item.cat === 'Shoes' ? 'flat-lay-shoes' : 'flat-lay-sm';
-      return `
-        <div class="flat-lay-slot">
-          <div class="flat-lay-img ${sizeClass}">
-            ${item.img
-              ? `<img src="${item.img}" onerror="this.parentElement.innerHTML='<span style=font-size:28px>${CAT_EMOJI[item.cat]}</span>'">`
-              : `<span style="font-size:28px">${CAT_EMOJI[item.cat]}</span>`}
-          </div>
-          <div class="flat-lay-label">${item.name}</div>
-          ${item.desc ? `<div style="font-size:9px;color:var(--dim);text-align:center;max-width:90px;line-height:1.3">${item.desc}</div>` : ''}
+      return `<div class="flat-lay-slot">
+        <div class="flat-lay-img ${sizeClass}">
+          ${item.img ? `<img src="${item.img}" onerror="this.parentElement.innerHTML='<span style=font-size:28px>${CAT_EMOJI[item.cat]}</span>'">` : `<span style="font-size:28px">${CAT_EMOJI[item.cat]}</span>`}
         </div>
-      `;
-    }).join('');
+        <div class="flat-lay-label">${item.name}</div>
+        ${item.desc ? `<div style="font-size:9px;color:var(--dim);text-align:center;max-width:90px;line-height:1.3">${item.desc}</div>` : ''}
+      </div>`;
+    };
+    if (bottomRow.length > 0) {
+      flatLay.style.flexDirection = 'column';
+      flatLay.style.gap = '10px';
+      flatLay.innerHTML = `<div style="display:flex;gap:10px;flex-wrap:wrap">${topRow.map(renderFlatItem).join('')}</div><div style="display:flex;gap:10px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:10px">${bottomRow.map(renderFlatItem).join('')}</div>`;
+    } else {
+      flatLay.style.flexDirection = 'row';
+      flatLay.style.gap = '10px';
+      flatLay.innerHTML = selected.map(renderFlatItem).join('');
+    }
   }
 
   // ── Tuck toggle ──────────────────────────────────────────────────────────
@@ -1847,6 +1860,20 @@ function renderFlatLay() {
     scorePill.style.display = 'none';
   }
 }
+function getOutfitGrid(outfit, realIdx) {
+  const outfitItems = outfit.items || [];
+  const count = outfitItems.length;
+  const cols = count <= 1 ? 1 : count <= 4 ? 2 : 3;
+  const maxItems = cols * 2;
+  const gridCols = 'repeat(' + cols + ', 1fr)';
+  return '<div class="saved-cover-placeholder" onclick="openOutfitDetail(' + realIdx + ')" style="cursor:pointer;display:grid;grid-template-columns:' + gridCols + ';gap:2px;aspect-ratio:3/4;background:var(--warm);padding:8px">' +
+    outfitItems.slice(0, maxItems).map(function(item) {
+      return '<div style="background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;border-radius:1px;overflow:hidden">' +
+        (item.img ? '<img src="' + item.img + '" style="width:100%;height:100%;object-fit:cover">' : (CAT_EMOJI[item.cat] || '\u{1F455}')) +
+        '</div>';
+    }).join('') + '</div>';
+}
+
 function renderLooks(filter) {
   if (filter !== undefined) looksFilter = filter;
   const grid = document.getElementById('looks-grid');
@@ -1872,13 +1899,7 @@ function renderLooks(filter) {
     const sc = scoreClass(outfit.score);
     const cover = outfit.outfitPhoto
       ? `<img class="saved-cover" src="${outfit.outfitPhoto}" alt="${outfit.name}" onclick="openOutfitDetail(${realIdx})" style="cursor:pointer">`
-      : `<div class="saved-cover-placeholder" onclick="openOutfitDetail(${realIdx})" style="cursor:pointer;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;aspect-ratio:3/4;background:var(--warm);padding:8px">
-          ${(outfit.items || []).slice(0, 6).map(item => `
-            <div style="background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;border-radius:1px;overflow:hidden">
-              ${item.img ? `<img src="${item.img}" style="width:100%;height:100%;object-fit:cover">` : CAT_EMOJI[item.cat]}
-            </div>
-          `).join('')}
-        </div>`;
+      : getOutfitGrid(outfit, realIdx);
     return `
       <div class="saved-card" onclick="openOutfitDetail(${realIdx})" style="cursor:pointer">
         ${cover}
@@ -3297,7 +3318,7 @@ function updateFormalityDropdowns() {
 }
 
 // ── ITEM FAVORITES ───────────────────────────────────────────────────────────
-let showingFavoritesOnly = false;
+let showingFavoritesOnly = false;false;
 
 async function toggleItemFavorite(id, e) {
   e.stopPropagation();
@@ -3312,11 +3333,11 @@ async function toggleItemFavorite(id, e) {
 function toggleWardrobeFavorites(btn) {
   showingFavoritesOnly = !showingFavoritesOnly;
   btn.textContent = showingFavoritesOnly ? '★' : '☆';
-  btn.style.color = showingFavoritesOnly ? 'var(--gold)' : 'var(--dim)';
-  btn.style.borderColor = showingFavoritesOnly ? 'var(--gold)' : 'var(--border)';
+  btn.style.color = showingFavoritesOnly ? '#C4A876' : 'var(--dim)';
+  btn.style.borderColor = showingFavoritesOnly ? '#C4A876' : 'var(--border)';
+  btn.style.background = showingFavoritesOnly ? 'var(--ink)' : 'none';
   const label = document.getElementById('wardrobe-active-filter');
   if (label) label.textContent = showingFavoritesOnly ? '★ Favorites' : (currentWardrobeFilter === 'all' ? 'All Items' : currentWardrobeFilter);
-  // Close filter panel after selection
   const panel = document.getElementById('wardrobe-filters');
   if (panel) panel.style.display = 'none';
   renderWardrobe(currentWardrobeFilter);
