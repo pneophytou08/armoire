@@ -731,7 +731,9 @@ input:focus, select:focus { border-color: var(--gold); }
       </button>
     </div>
     <div id="wardrobe-filters" style="display:none;flex-direction:column;margin-bottom:16px">
-      <div class="filter-bar" style="flex-wrap:wrap" id="wardrobe-filter-btns"></div>
+      <div class="filter-bar" style="flex-wrap:wrap;align-items:center" id="wardrobe-filter-btns">
+        <!-- category buttons injected here, star appended dynamically -->
+      </div>
     </div>
     <div class="wardrobe-grid" id="wardrobe-grid"></div>
   </div>
@@ -1602,29 +1604,59 @@ function getStylingNote(items, score) {
 function getStylingNoteFromScore(items, score) {
   const top = items.find(i => i.cat === 'Top');
   const bottom = items.find(i => i.cat === 'Bottoms');
+  const shoes = items.find(i => i.cat === 'Shoes');
+  const hasAccessory = items.some(i => ['Belt','Watch','Hat','Accessory'].includes(i.cat));
 
-  // Tuck note
-  let tuckNote = '';
-  if (top && tuckedIn !== null) {
-    if (tuckedIn) tuckNote = ' Tucked in — sharp and intentional.';
-    else tuckNote = ' Left out — relaxed but considered.';
+  // Generate occasional styling suggestions
+  const stylingTips = [];
+
+  // Sock suggestions (occasional, ~40% chance)
+  if (bottom && Math.random() < 0.4) {
+    const bottomColor = bottom.color;
+    const isShort = bottom.desc?.toLowerCase().includes('short') || bottom.name?.toLowerCase().includes('short');
+    if (!isShort) {
+      const sockSuggestions = {
+        navy: 'Navy ribbed socks keep this polished.',
+        brown: 'Charcoal or tan socks work beautifully here.',
+        beige: 'No-show socks keep this clean.',
+        black: 'Black socks, no discussion needed.',
+        grey: 'Charcoal socks tie it together.',
+        pattern: 'Keep socks solid — let the pattern breathe.',
+      };
+      if (sockSuggestions[bottomColor]) stylingTips.push(sockSuggestions[bottomColor]);
+    }
   }
+
+  // Tuck suggestion (occasional, ~35% chance, only for tops with formality 3+)
+  if (top && top.formality >= 3 && Math.random() < 0.35) {
+    const tuckSuggestions = [
+      'Tuck it in for a sharper silhouette.',
+      'Half-tuck adds just enough intentionality.',
+      'Fully tucked elevates the whole look.',
+    ];
+    stylingTips.push(tuckSuggestions[Math.floor(Math.random() * tuckSuggestions.length)]);
+  }
+
+  const tipSuffix = stylingTips.length ? ' — ' + stylingTips[0] : '';
 
   if (score.total >= 85) {
-    if (top?.color === 'pattern') return 'The striped shirt is your anchor — everything else stays solid and the look sings.' + tuckNote;
-    if (top && bottom) return `${top.name} and ${bottom.name} share a natural tonal relationship. A well-balanced combination.` + tuckNote;
-    return 'Well-balanced combination — the pieces work naturally together.' + tuckNote;
+    if (top?.color === 'pattern') return 'The stripe is your anchor — everything else stays solid.' + tipSuffix;
+    if (top && bottom) return top.name + ' and ' + bottom.name + ' share a natural tonal relationship.' + tipSuffix;
+    return 'Well-balanced — the pieces work naturally together.' + tipSuffix;
   }
-  if (score.formality < 60) return 'The formality levels differ here — consider whether the occasion calls for more consistency.' + tuckNote;
-  if (score.color < 65) return 'A bold color pairing. Keep accessories neutral to avoid competing tones.' + tuckNote;
-  if (score.occasion < 50) return 'These pieces are pulled from different occasions — an interesting mix.' + tuckNote;
-  return 'A solid combination. Small adjustments could push the score higher.' + tuckNote;
+  if (score.formality < 60) return 'Formality levels differ — worth considering the occasion.' + tipSuffix;
+  if (score.color < 65) return 'A bold pairing. Keep accessories neutral to avoid competing tones.' + tipSuffix;
+  if (score.occasion < 50) return 'Pulled from different occasions — an intentional mix.' + tipSuffix;
+  return 'A solid combination. Small adjustments could push it higher.' + tipSuffix;
 }
 
 function scoreClass(s) { return s >= 80 ? 'high' : s >= 65 ? 'mid' : 'low'; }
 
 // ── RENDER: WARDROBE ─────────────────────────────────────────────────────────
+let currentWardrobeFilter = 'all';
+
 function renderWardrobe(filter = 'all') {
+  currentWardrobeFilter = filter;
   // Dynamically build filter buttons based on what categories exist in wardrobe
   const filterContainer = document.getElementById('wardrobe-filter-btns');
   if (filterContainer) {
@@ -1645,14 +1677,18 @@ function renderWardrobe(filter = 'all') {
     filterContainer.innerHTML = allBtns.map(b => `
       <button class="filter-btn ${filter === b.cat ? 'active' : ''}"
         onclick="filterWardrobe('${b.cat}', this, '${b.label}')">${b.label}</button>
-    `).join('');
+    `).join('') + `<button onclick="toggleWardrobeFavorites(this)" id="wardrobe-fav-btn"
+      style="background:${showingFavoritesOnly ? 'var(--ink)' : 'none'};border:1px solid ${showingFavoritesOnly ? 'var(--gold)' : 'var(--border)'};width:34px;height:34px;display:inline-flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;border-radius:2px;color:${showingFavoritesOnly ? 'var(--gold)' : 'var(--dim)'};transition:all 0.2s;flex-shrink:0"
+      title="Show favorites">${showingFavoritesOnly ? '★' : '☆'}</button>`;
   }
 
   const grid = document.getElementById('wardrobe-grid');
-  const items = filter === 'all' ? wardrobe : wardrobe.filter(i => i.cat === filter);
+  let items = filter === 'all' ? wardrobe : wardrobe.filter(i => i.cat === filter);
+  if (showingFavoritesOnly) items = items.filter(i => i.favorite);
   grid.innerHTML = items.map(item => `
     <div class="item-card" id="wc-${item.id}" onclick="openEditItem(${item.id}, event)" style="cursor:pointer">
       <div class="sel-badge">✓</div>
+      <button onclick="toggleItemFavorite(${item.id}, event)" style="position:absolute;top:7px;right:7px;background:none;border:none;font-size:18px;cursor:pointer;z-index:3;line-height:1;padding:2px" title="Favorite">${item.favorite ? '★' : '☆'}</button>
       ${item.img ? `<img class="item-photo" src="${item.img}" alt="${item.name}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
       <div class="item-placeholder" style="${item.img ? 'display:none' : ''}">${CAT_EMOJI[item.cat]}</div>
       <div class="item-info">
@@ -1668,19 +1704,36 @@ function renderWardrobe(filter = 'all') {
 function renderBuilder() {
   renderFlatLay();
   const container = document.getElementById('builder-cats');
-  container.innerHTML = CAT_ORDER.map(cat => {
+  // Build dynamic category list from actual wardrobe items
+  const usedCats = [...new Set(wardrobe.map(i => i.cat))];
+  // Order: standard categories first, then custom ones
+  const orderedCats = [
+    ...CAT_ORDER.filter(c => usedCats.includes(c)),
+    ...usedCats.filter(c => !CAT_ORDER.includes(c))
+  ];
+  const accessoryCats = ['Belt', 'Watch', 'Hat', 'Socks', 'Accessory'];
+  const mainCats = orderedCats.filter(c => !accessoryCats.includes(c));
+  const accCats = orderedCats.filter(c => accessoryCats.includes(c));
+
+  container.innerHTML = [...mainCats, ...accCats].map(cat => {
     const items = wardrobe.filter(i => i.cat === cat);
     if (!items.length) return '';
+    const isAccessory = accessoryCats.includes(cat);
     return `
-      <div class="cat-section">
-        <div class="cat-label">${({'Bottoms':'Bottoms','Shoes':'Shoes','Jackets & Outerwear':'Jackets & Outerwear','Socks':'Socks','Belt':'Belts','Watch':'Watches','Hat':'Hats'})[cat] || cat + 's'}</div>
+      <div class="cat-section" ${isAccessory ? 'style=\"opacity:0.85\"' : ''}>
+        <div class="cat-label">
+          ${({'Bottoms':'Bottoms','Shoes':'Shoes','Jackets & Outerwear':'Jackets & Outerwear','Socks':'Socks','Belt':'Belts','Watch':'Watches','Hat':'Hats'})[cat] || cat + 's'}
+          ${isAccessory ? '<span style=\"font-size:8px;letter-spacing:1px;color:var(--dim);font-style:italic;margin-left:4px\">optional</span>' : ''}
+        </div>
         <div class="scroll-row">
           ${items.map(item => `
             <div class="mini-card ${selectedItems[cat] === item.id ? 'active' : ''}" onclick="toggleSelect('${cat}', ${item.id})">
               <div class="sel-badge">✓</div>
               ${item.img ? `<img class="mini-photo" src="${item.img}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ''}
               <div class="mini-placeholder" style="${item.img ? 'display:none' : ''}">${CAT_EMOJI[cat]}</div>
-              <div class="mini-info"><div class="mini-name">${item.name}</div></div>
+              <div class="mini-info">
+              <div class="mini-name">${item.name}${item.favorite ? ' <span style=\"color:var(--gold);font-size:10px\">★</span>' : ''}</div>
+            </div>
             </div>
           `).join('')}
         </div>
@@ -2030,6 +2083,68 @@ function clearOutfit() {
 
 let vibeCriteria = 'any';
 let looksFilter = 'all';
+
+// Rotation tracking — tracks recent item usage to avoid repetition
+let itemUsageHistory = loadData('armoire_usage', {}); // { itemId: [timestamp, timestamp...] }
+
+// Preference learning — tracks what items appear in saved/favorited looks
+function getItemPreferenceScore(itemId) {
+  const id = String(itemId);
+  let score = 0;
+  savedOutfits.forEach(outfit => {
+    if (outfit.items?.some(i => String(i.id) === id)) {
+      score += 1; // saved = good
+      if (outfit.favorite) score += 2; // favorited = great
+      if (outfit.score >= 85) score += 1; // high scoring = good
+    }
+  });
+  return score;
+}
+
+function getItemRecencyPenalty(itemId) {
+  const id = String(itemId);
+  const history = itemUsageHistory[id] || [];
+  if (!history.length) return 0;
+  const mostRecent = Math.max(...history);
+  const hoursSince = (Date.now() - mostRecent) / (1000 * 60 * 60);
+  if (hoursSince < 24) return 3; // used today — heavy penalty
+  if (hoursSince < 72) return 2; // used in last 3 days
+  if (hoursSince < 168) return 1; // used this week
+  return 0;
+}
+
+function recordItemUsage(itemIds) {
+  const now = Date.now();
+  itemIds.forEach(id => {
+    const key = String(id);
+    if (!itemUsageHistory[key]) itemUsageHistory[key] = [];
+    itemUsageHistory[key].push(now);
+    // Keep only last 10 uses
+    if (itemUsageHistory[key].length > 10) itemUsageHistory[key].shift();
+  });
+  saveData('armoire_usage', itemUsageHistory);
+}
+
+function getSmartItemScore(item) {
+  const favBoost = item.favorite ? 3 : 0; // favorite items get a boost
+  return getItemPreferenceScore(item.id) - getItemRecencyPenalty(item.id) + favBoost;
+}
+
+function pickSmartItem(items) {
+  if (!items.length) return null;
+  // Score each item and pick probabilistically
+  const scored = items.map(i => ({
+    item: i,
+    score: Math.max(0, 5 + getSmartItemScore(i)) // base score 5, adjust by preference/recency
+  }));
+  const total = scored.reduce((sum, s) => sum + s.score, 0);
+  let rand = Math.random() * total;
+  for (const s of scored) {
+    rand -= s.score;
+    if (rand <= 0) return s.item;
+  }
+  return scored[scored.length - 1].item;
+}
 let tuckedIn = null; // null = not set, true = tucked, false = untucked
 let lastVibeReason = null;
 
@@ -2132,13 +2247,23 @@ function setVibeCriteria(criteria, btn) {
 
 function surpriseMe() {
   lastVibeReason = null;
-  CAT_ORDER.forEach(cat => {
+  const accessoryCats = ['Belt', 'Watch', 'Hat', 'Socks', 'Accessory'];
+  const usedCats = [...new Set(wardrobe.map(i => i.cat))];
+
+  usedCats.forEach(cat => {
     const locked = selectedItems[cat];
+    if (locked) return;
     const items = wardrobe.filter(i => i.cat === cat);
-    if (!locked && items.length) {
-      selectedItems[cat] = items[Math.floor(Math.random() * items.length)].id;
-    }
+    if (!items.length) return;
+    // Accessories: only include 30% of the time
+    if (accessoryCats.includes(cat) && Math.random() > 0.3) return;
+    const picked = pickSmartItem(items);
+    if (picked) selectedItems[cat] = picked.id;
   });
+
+  // Record usage
+  const usedIds = Object.values(selectedItems);
+  recordItemUsage(usedIds);
   renderBuilder();
   showToast('Surprise outfit generated ✦');
 }
@@ -2219,6 +2344,7 @@ Only include categories where you have a strong pick. Use exact numeric IDs. Ski
     }
 
     lastVibeReason = result.reason || null;
+    recordItemUsage(Object.values(selectedItems));
     renderBuilder();
     showToast('Cooked ✦');
 
@@ -2252,9 +2378,12 @@ function vibeGenerateFallback(vibe) {
   for (const [keyword, season] of Object.entries(seasonMap)) {
     if (v.includes(keyword)) { detectedSeason = season; break; }
   }
-  CAT_ORDER.forEach(cat => {
+  const accessoryCats = ['Belt', 'Watch', 'Hat', 'Socks', 'Accessory'];
+  const usedCats = [...new Set(wardrobe.map(i => i.cat))];
+  usedCats.forEach(cat => {
     const locked = selectedItems[cat];
     if (locked) return;
+    if (accessoryCats.includes(cat) && Math.random() > 0.3) return;
     let items = wardrobe.filter(i => i.cat === cat);
     if (detectedOccasion) {
       const filtered = items.filter(i => i.occasions?.includes(detectedOccasion));
@@ -2264,7 +2393,10 @@ function vibeGenerateFallback(vibe) {
       const filtered = items.filter(i => i.seasons?.includes(detectedSeason));
       if (filtered.length) items = filtered;
     }
-    if (items.length) selectedItems[cat] = items[Math.floor(Math.random() * items.length)].id;
+    if (items.length) {
+      const picked = pickSmartItem(items);
+      if (picked) selectedItems[cat] = picked.id;
+    }
   });
   lastVibeReason = getVibeReason(v, detectedOccasion, detectedSeason);
   renderBuilder();
@@ -3162,6 +3294,32 @@ function updateFormalityDropdowns() {
       `<option value="${f.value}" ${f.value == current ? 'selected' : ''}>${f.label}</option>`
     ).join('');
   });
+}
+
+// ── ITEM FAVORITES ───────────────────────────────────────────────────────────
+let showingFavoritesOnly = false;
+
+async function toggleItemFavorite(id, e) {
+  e.stopPropagation();
+  const item = wardrobe.find(i => i.id === id);
+  if (!item) return;
+  item.favorite = !item.favorite;
+  await persistItem(item);
+  renderWardrobe(currentWardrobeFilter);
+  showToast(item.favorite ? '★ Added to favorites' : 'Removed from favorites');
+}
+
+function toggleWardrobeFavorites(btn) {
+  showingFavoritesOnly = !showingFavoritesOnly;
+  btn.textContent = showingFavoritesOnly ? '★' : '☆';
+  btn.style.color = showingFavoritesOnly ? 'var(--gold)' : 'var(--dim)';
+  btn.style.borderColor = showingFavoritesOnly ? 'var(--gold)' : 'var(--border)';
+  const label = document.getElementById('wardrobe-active-filter');
+  if (label) label.textContent = showingFavoritesOnly ? '★ Favorites' : (currentWardrobeFilter === 'all' ? 'All Items' : currentWardrobeFilter);
+  // Close filter panel after selection
+  const panel = document.getElementById('wardrobe-filters');
+  if (panel) panel.style.display = 'none';
+  renderWardrobe(currentWardrobeFilter);
 }
 
 function toggleOcc(btn) { btn.classList.toggle('active'); }
