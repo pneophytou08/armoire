@@ -568,27 +568,7 @@ main {
 .saved-cover-placeholder {
   width: 100%;
   aspect-ratio: 3/4;
-  background: var(--warm);
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px;
 }
-
-.saved-cover-placeholder .thumb {
-  width: 44px;
-  height: 44px;
-  background: var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  overflow: hidden;
-}
-
-.saved-cover-placeholder .thumb img { width: 100%; height: 100%; object-fit: cover; }
 
 .saved-info { padding: 10px 12px 12px; border-top: 1px solid var(--border); }
 .saved-name { font-family: 'Cormorant', serif; font-size: 16px; font-weight: 400; margin-bottom: 2px; }
@@ -778,13 +758,7 @@ input:focus, select:focus { border-color: var(--gold); }
             </div>
           </div>
           <div id="weather-quip" style="font-size:11px;color:var(--mid);font-style:italic;letter-spacing:0.3px;display:none"></div>
-          <div id="tuck-toggle" style="display:none;align-items:center;gap:8px">
-            <span style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--mid)">Shirt</span>
-            <div style="display:flex;border:1px solid var(--border);border-radius:1px;overflow:hidden">
-              <button id="tuck-in-btn" onclick="setTuck(true)" style="padding:4px 12px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-family:Jost,sans-serif;background:none;border:none;cursor:pointer;color:var(--mid);transition:all 0.15s">Tucked</button>
-              <button id="tuck-out-btn" onclick="setTuck(false)" style="padding:4px 12px;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-family:Jost,sans-serif;background:none;border:none;cursor:pointer;color:var(--mid);transition:all 0.15s;border-left:1px solid var(--border)">Untucked</button>
-            </div>
-          </div>
+
         </div>
         <div id="outfit-flat-lay" class="outfit-flat-lay">
           <div class="outfit-empty">Select pieces below to build your outfit</div>
@@ -1062,6 +1036,20 @@ input:focus, select:focus { border-color: var(--gold); }
   </div>
 </div>
 
+<!-- OUTFIT DETAIL MODAL -->
+<div class="modal-overlay" id="modal-outfit-detail">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="outfit-detail-title">Outfit Details</h3>
+      <button class="modal-close" onclick="closeModal('modal-outfit-detail')">×</button>
+    </div>
+    <div class="modal-body" id="outfit-detail-body"></div>
+    <div style="padding:0 20px 20px;display:flex;gap:8px">
+      <button class="btn-primary" onclick="editCurrentLook()" style="flex:1">Edit Look</button>
+    </div>
+  </div>
+</div>
+
 <!-- EDIT LOOK MODAL -->
 <div class="modal-overlay" id="modal-edit-look">
   <div class="modal">
@@ -1125,6 +1113,30 @@ input:focus, select:focus { border-color: var(--gold); }
       <label>Supabase Publishable Key</label>
       <input type="password" id="supa-key" placeholder="eyJ...">
       <button class="btn-primary" onclick="saveSupabaseKeys()" style="margin-bottom:20px">Connect to Supabase</button>
+      <div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:16px"></div>
+
+      <label style="font-size:11px;letter-spacing:2px;color:var(--gold)">Customization</label>
+
+      <div style="margin-bottom:4px">
+        <button onclick="toggleCustomSection('cats')" style="width:100%;text-align:left;padding:12px 0;background:none;border:none;border-bottom:1px solid var(--border);font-family:Jost,sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+          Item Categories <span id="cats-chevron">›</span>
+        </button>
+        <div id="custom-cats-panel" style="display:none;padding-top:12px;margin-bottom:8px">
+          <div id="custom-cats-list" style="margin-bottom:8px"></div>
+          <button onclick="addCustomCategory()" style="width:100%;padding:10px;background:none;border:1px dashed var(--border);color:var(--mid);font-family:Jost,sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:1px">+ Add Category</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <button onclick="toggleCustomSection('formality')" style="width:100%;text-align:left;padding:12px 0;background:none;border:none;border-bottom:1px solid var(--border);font-family:Jost,sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);cursor:pointer;display:flex;justify-content:space-between;align-items:center">
+          Formality Levels <span id="formality-chevron">›</span>
+        </button>
+        <div id="custom-formality-panel" style="display:none;padding-top:12px;margin-bottom:8px">
+          <div id="custom-formality-list" style="margin-bottom:8px"></div>
+          <button onclick="addCustomFormality()" style="width:100%;padding:10px;background:none;border:1px dashed var(--border);color:var(--mid);font-family:Jost,sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:1px">+ Add Level</button>
+        </div>
+      </div>
+
       <div style="border-top:1px solid var(--border);padding-top:16px;margin-bottom:16px"></div>
       <label>Export backup</label>
       <p style="font-size:12px;color:var(--mid);margin-bottom:12px;line-height:1.7">Downloads all your wardrobe data as a file. Keep it safe — you can restore from it anytime.</p>
@@ -1806,10 +1818,16 @@ function renderLooks(filter) {
     const realIdx = savedOutfits.indexOf(outfit);
     const sc = scoreClass(outfit.score);
     const cover = outfit.outfitPhoto
-      ? `<img class="saved-cover" src="${outfit.outfitPhoto}" alt="${outfit.name}">`
-      : `<div class="saved-cover-placeholder">${outfit.items.map(item => `<div class="saved-thumb">${item.img ? `<img src="${item.img}">` : CAT_EMOJI[item.cat]}</div>`).join('')}</div>`;
+      ? `<img class="saved-cover" src="${outfit.outfitPhoto}" alt="${outfit.name}" onclick="openOutfitDetail(${realIdx})" style="cursor:pointer">`
+      : `<div class="saved-cover-placeholder" onclick="openOutfitDetail(${realIdx})" style="cursor:pointer;display:grid;grid-template-columns:repeat(3,1fr);gap:2px;aspect-ratio:3/4;background:var(--warm);padding:8px">
+          ${(outfit.items || []).slice(0, 6).map(item => `
+            <div style="background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;border-radius:1px;overflow:hidden">
+              ${item.img ? `<img src="${item.img}" style="width:100%;height:100%;object-fit:cover">` : CAT_EMOJI[item.cat]}
+            </div>
+          `).join('')}
+        </div>`;
     return `
-      <div class="saved-card" onclick="openEditLook(${realIdx})" style="cursor:pointer">
+      <div class="saved-card" onclick="openOutfitDetail(${realIdx})" style="cursor:pointer">
         ${cover}
         <div class="saved-info">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2px">
@@ -1822,7 +1840,7 @@ function renderLooks(filter) {
           ${outfit.occasions?.length ? `<div class="saved-tags">${outfit.occasions.map(o => `<span class="saved-tag">${o}</span>`).join('')}</div>` : ''}
           ${outfit.seasons?.length ? `<div class="saved-tags">${outfit.seasons.map(s => `<span class="saved-tag" style="border-color:var(--green);color:var(--green)">${s}</span>`).join('')}</div>` : ''}
           ${outfit.notes ? `<div style="font-size:11px;color:var(--mid);font-style:italic;line-height:1.6;padding:8px 0;border-top:1px solid var(--border);margin-top:4px">"${outfit.notes}"</div>` : ''}
-          <div class="saved-foot" onclick="openEditLook(${realIdx})" style="cursor:pointer">
+          <div class="saved-foot" onclick="openOutfitDetail(${realIdx})" style="cursor:pointer">
             <span class="saved-date">${outfit.worn ? 'Worn' : 'Saved'}</span>
             <span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid)">Edit ›</span>
           </div>
@@ -1833,6 +1851,46 @@ function renderLooks(filter) {
 }
 
 let editingLookIdx = null;
+
+let currentDetailLookIdx = null;
+
+function openOutfitDetail(idx) {
+  currentDetailLookIdx = idx;
+  const outfit = savedOutfits[idx];
+  if (!outfit) return;
+
+  document.getElementById('outfit-detail-title').textContent = outfit.name;
+
+  const body = document.getElementById('outfit-detail-body');
+  body.innerHTML = `
+    ${outfit.outfitPhoto ? `<img src="${outfit.outfitPhoto}" style="width:100%;max-height:240px;object-fit:cover;margin-bottom:16px;border-radius:2px">` : ''}
+    <div style="margin-bottom:12px">
+      ${(outfit.items || []).map(item => `
+        <div onclick="openEditItem(${item.id}, event)" style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--warm);border:1px solid var(--border);margin-bottom:6px;border-radius:1px;cursor:pointer">
+          <div style="width:56px;height:56px;flex-shrink:0;background:var(--border);overflow:hidden;border-radius:1px;display:flex;align-items:center;justify-content:center;font-size:22px">
+            ${item.img ? `<img src="${item.img}" style="width:100%;height:100%;object-fit:cover">` : (CAT_EMOJI[item.cat] || '👔')}
+          </div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:2px">${item.cat}</div>
+            <div style="font-family:Cormorant,serif;font-size:16px;font-weight:400;color:var(--ink)">${item.name}</div>
+            ${item.desc ? `<div style="font-size:10px;color:var(--dim)">${item.desc}</div>` : ''}
+          </div>
+          <div style="color:var(--dim);font-size:16px">›</div>
+        </div>
+      `).join('')}
+    </div>
+    ${outfit.notes ? `<div style="font-size:12px;color:var(--mid);font-style:italic;padding:10px 12px;background:var(--warm);border-left:2px solid var(--gold-light);margin-bottom:12px">"${outfit.notes}"</div>` : ''}
+    ${outfit.occasions?.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">${outfit.occasions.map(o => `<span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border:1px solid var(--border);color:var(--mid)">${o}</span>`).join('')}</div>` : ''}
+    ${outfit.seasons?.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap">${outfit.seasons.map(s => `<span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border:1px solid var(--green);color:var(--green)">${s}</span>`).join('')}</div>` : ''}
+  `;
+
+  openModal('modal-outfit-detail');
+}
+
+function editCurrentLook() {
+  closeModal('modal-outfit-detail');
+  if (currentDetailLookIdx !== null) openEditLook(currentDetailLookIdx);
+}
 
 function openEditLook(idx) {
   editingLookIdx = idx;
@@ -2601,58 +2659,68 @@ async function analyzeAllItems() {
   const key = localStorage.getItem('anthropic_key');
   if (!key) { showToast('Add your Anthropic API key first'); return; }
 
-  const itemsWithPhotos = wardrobe.filter(i => i.img);
-  const itemsWithoutPhotos = wardrobe.filter(i => !i.img);
+  // Only analyze items with photos that haven't been analyzed yet
+  const itemsToAnalyze = wardrobe.filter(i => i.img && (!i.aiPairings || i.aiPairings.length === 0));
+  const alreadyDone = wardrobe.filter(i => i.img && i.aiPairings?.length > 0).length;
+  const noPhoto = wardrobe.filter(i => !i.img).length;
 
-  if (!itemsWithPhotos.length) {
-    showToast('No items with photos to analyze');
+  if (!itemsToAnalyze.length) {
+    showToast('All items already analyzed ✓');
+    const statusEl = document.getElementById('analyze-all-status');
+    if (statusEl) {
+      statusEl.style.display = 'block';
+      statusEl.textContent = '✓ All ' + alreadyDone + ' items already have AI data. ' + noPhoto + ' items have no photo.';
+      statusEl.style.color = 'var(--green)';
+    }
     return;
   }
 
   const statusEl = document.getElementById('analyze-all-status');
   const btn = document.getElementById('analyze-all-btn');
   statusEl.style.display = 'block';
+  statusEl.style.color = 'var(--mid)';
   btn.disabled = true;
   btn.textContent = 'Analyzing...';
 
   let done = 0;
   let failed = 0;
 
-  for (const item of itemsWithPhotos) {
-    statusEl.textContent = `Analyzing ${done + 1} of ${itemsWithPhotos.length}: ${item.name}...`;
-    try {
-      // Handle both base64 and Supabase URLs
-      let imageData = item.img;
-      let base64, mediaType;
+  for (const item of itemsToAnalyze) {
+    statusEl.textContent = done + 1 + ' / ' + itemsToAnalyze.length + ' — ' + item.name;
 
-      if (imageData.startsWith('data:')) {
-        base64 = await convertToJpegBase64(imageData);
-        mediaType = 'image/jpeg';
-      } else if (imageData.startsWith('http')) {
-        // Fetch from Supabase URL and convert to base64
+    try {
+      let imageData = item.img;
+
+      if (imageData.startsWith('http')) {
+        // Fetch from Supabase with a timeout
         try {
-          const fetchRes = await fetch(imageData);
+          const controller = new AbortController();
+          const fetchTimeout = setTimeout(() => controller.abort(), 8000);
+          const fetchRes = await fetch(imageData, { signal: controller.signal });
+          clearTimeout(fetchTimeout);
           const blob = await fetchRes.blob();
-          const reader = new FileReader();
           imageData = await new Promise(resolve => {
+            const reader = new FileReader();
             reader.onload = e => resolve(e.target.result);
             reader.readAsDataURL(blob);
           });
-          base64 = imageData.split(',')[1];
-          mediaType = blob.type || 'image/jpeg';
         } catch(e) {
+          // Skip this item if fetch fails or times out
+          failed++;
           done++;
+          await new Promise(r => setTimeout(r, 100));
           continue;
         }
-      } else {
-        done++;
-        continue;
       }
 
+      const base64 = await convertToJpegBase64(imageData);
       const wardrobeSummary = wardrobe
         .filter(w => w.id !== item.id)
-        .map(i => `${i.name} (${i.cat}, ${i.color}, formality ${i.formality})`)
+        .map(i => i.name + ' (' + i.cat + ', ' + i.color + ', formality ' + i.formality + ')')
         .join(', ');
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30000); // 30s for Claude API
 
       const response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -2662,36 +2730,32 @@ async function analyzeAllItems() {
           'anthropic-version': '2023-06-01',
           'anthropic-dangerous-direct-browser-access': 'true',
         },
+        signal: controller.signal,
         body: JSON.stringify({
           model: 'claude-haiku-4-5-20251001',
-          max_tokens: 600,
+          max_tokens: 500,
           messages: [{
             role: 'user',
             content: [
-              { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-              { type: 'text', text: `Analyze this clothing item. Rest of wardrobe: ${wardrobeSummary || 'none yet'}. Return ONLY JSON:
-{
-  "color": "one of: white, black, navy, blue, grey, beige, brown, green, pink, red, pattern",
-  "formality": number 1-5,
-  "occasions": array from ["Casual","Smart Casual","Office","Evening","Weekend"],
-  "desc": "brief 3-6 word description",
-  "pairings": [{"occasion":"","items":[],"note":""}]
-}` }
+              { type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } },
+              { type: 'text', text: 'Wardrobe: ' + wardrobeSummary + '. Return ONLY JSON: {"color":"one of: white,black,navy,blue,grey,beige,brown,green,pink,red,pattern","formality":1-5,"occasions":["Casual","Smart Casual","Office","Evening","Weekend"],"desc":"3-6 words","pairings":[{"occasion":"","items":[],"note":""}]}' }
             ]
           }]
         })
       });
 
+      clearTimeout(timeout);
+
       if (response.ok) {
         const data = await response.json();
         const text = data.content[0].text.trim().replace(/```json|```/g, '').trim();
         const result = JSON.parse(text);
-        // Update item with AI data
         if (result.color) item.color = result.color;
         if (result.formality) item.formality = result.formality;
         if (result.occasions?.length) item.occasions = result.occasions;
         if (result.desc) item.desc = result.desc;
         if (result.pairings) item.aiPairings = result.pairings;
+        await saveItemToSupabase(item);
         done++;
       } else {
         failed++;
@@ -2702,132 +2766,23 @@ async function analyzeAllItems() {
       done++;
     }
 
-    // Small delay between calls to avoid rate limiting
-    await new Promise(r => setTimeout(r, 500));
+    // Short delay between items
+    await new Promise(r => setTimeout(r, 100));
   }
 
   persist();
   renderWardrobe();
 
-  const skipped = itemsWithoutPhotos.length;
-  statusEl.innerHTML = `✓ Analyzed ${done} items${failed ? ', ' + failed + ' failed' : ''}${skipped ? '<br>' + skipped + ' items skipped (no photo)' : ''}`;
+  statusEl.innerHTML = '✓ Analyzed ' + done + ' items' +
+    (failed ? ', ' + failed + ' failed' : '') +
+    (alreadyDone ? '<br>' + alreadyDone + ' already had AI data' : '') +
+    (noPhoto ? '<br>' + noPhoto + ' items have no photo' : '');
   statusEl.style.color = 'var(--green)';
   btn.disabled = false;
   btn.textContent = '✦ Analyze All Wardrobe Items';
-  showToast('Wardrobe analysis complete ✓');
+  showToast('Analysis complete ✓');
 }
 
-// ── SMART COMPATIBILITY UPDATE ───────────────────────────────────────────────
-// When a new item is added, update compatibility for existing items in other categories
-async function updateCompatibilityForNewItem(newItem) {
-  const key = localStorage.getItem('anthropic_key');
-  if (!key || !newItem.img) return;
-
-  // Only update items in OTHER categories
-  const relatedItems = wardrobe.filter(i =>
-    i.id !== newItem.id &&
-    i.cat !== newItem.cat &&
-    i.img && // must have a photo
-    !i.aiPairings?.some(p => p.items?.some(name =>
-      name.toLowerCase().includes(newItem.name.toLowerCase())
-    ))
-  );
-
-  if (!relatedItems.length) return;
-
-  // Silently analyze the new item with full wardrobe context
-  try {
-    let imageData = newItem.img;
-    if (!imageData.startsWith('data:')) {
-      const fetchRes = await fetch(imageData);
-      const blob = await fetchRes.blob();
-      imageData = await new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result);
-        reader.readAsDataURL(blob);
-      });
-    }
-
-    const base64 = imageData.split(',')[1];
-    const mediaType = imageData.split(';')[0].split(':')[1] || 'image/jpeg';
-    const wardrobeSummary = wardrobe
-      .filter(i => i.id !== newItem.id)
-      .map(i => `${i.name} (${i.cat}, ${i.color}, formality ${i.formality})`)
-      .join(', ');
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 600,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
-            { type: 'text', text: `Analyze this new clothing item against this wardrobe: ${wardrobeSummary}. Return ONLY JSON:
-{
-  "color": "one of: white,black,navy,blue,grey,beige,brown,green,pink,red,pattern",
-  "formality": 1-5,
-  "occasions": ["Casual","Smart Casual","Office","Evening","Weekend"],
-  "desc": "3-6 word description",
-  "pairings": [{"occasion":"","items":[],"note":""}]
-}
-Suggest 2-3 best pairings using exact item names from the wardrobe.` }
-          ]
-        }]
-      })
-    });
-
-    if (response.ok) {
-      const data = await response.json();
-      const text = data.content[0].text.trim().replace(/```json|```/g, '').trim();
-      const result = JSON.parse(text);
-      if (result.color) newItem.color = result.color;
-      if (result.formality) newItem.formality = result.formality;
-      if (result.occasions?.length) newItem.occasions = result.occasions;
-      if (result.desc) newItem.desc = result.desc;
-      if (result.pairings) newItem.aiPairings = result.pairings;
-      persist();
-      renderWardrobe();
-      showToast('AI pairings updated ✦');
-    }
-  } catch(e) {
-    console.log('Compatibility update error:', e);
-  }
-}
-
-function saveAnthropicKey() {
-  const key = document.getElementById('anthropic-key').value.trim();
-  if (!key) { showToast('Please enter your API key'); return; }
-  localStorage.setItem('anthropic_key', key);
-  showAnthropicStatus('AI analysis ready ✓', true);
-  showToast('AI key saved ✓');
-}
-
-function showAnthropicStatus(msg, success) {
-  const bar = document.getElementById('anthropic-status');
-  if (!bar) return;
-  bar.style.display = 'block';
-  bar.style.background = success ? 'rgba(61,107,82,0.15)' : 'rgba(139,58,47,0.15)';
-  bar.style.border = success ? '1px solid var(--green)' : '1px solid var(--red)';
-  bar.style.color = success ? 'var(--green)' : 'var(--red)';
-  bar.style.padding = '8px 12px';
-  bar.style.borderRadius = '2px';
-  bar.textContent = msg;
-}
-
-async function analyzePhoto() {
-  const key = localStorage.getItem('anthropic_key');
-  if (!key) { showToast('Add your Anthropic API key in Settings first'); return; }
-  if (!uploadedData.add) { showToast('Upload a photo first'); return; }
-  await runAnalysis(uploadedData.add, key, 'add');
-}
 
 async function analyzeEditPhoto() {
   const key = localStorage.getItem('anthropic_key');
@@ -2876,6 +2831,8 @@ async function runAnalysis(imageData, key, mode) {
       `- ${i.name} (${i.cat}, ${i.color}, formality ${i.formality})`
     ).join(', ');
 
+    const singleController = new AbortController();
+    const singleTimeout = setTimeout(() => singleController.abort(), 30000);
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -2884,6 +2841,7 @@ async function runAnalysis(imageData, key, mode) {
         'anthropic-version': '2023-06-01',
         'anthropic-dangerous-direct-browser-access': 'true',
       },
+      signal: singleController.signal,
       body: JSON.stringify({
         model: 'claude-opus-4-5',
         max_tokens: 800,
@@ -2922,6 +2880,7 @@ For pairings: suggest 2-3 specific outfit combinations using exact item names fr
       })
     });
 
+    clearTimeout(singleTimeout);
     if (!response.ok) {
       const err = await response.json();
       throw new Error(err.error?.message || 'API error ' + response.status);
@@ -2984,6 +2943,191 @@ For pairings: suggest 2-3 specific outfit combinations using exact item names fr
   }
 }
 
+// ── CUSTOM CATEGORIES & FORMALITY ───────────────────────────────────────────
+let customCategories = loadData('armoire_custom_cats', [...CAT_ORDER]);
+let customFormality = loadData('armoire_custom_formality', [
+  { value: 1, label: '1 — Very Casual' },
+  { value: 2, label: '2 — Casual' },
+  { value: 3, label: '3 — Smart Casual' },
+  { value: 4, label: '4 — Office / Smart' },
+  { value: 5, label: '5 — Formal' },
+]);
+
+function toggleCustomSection(type) {
+  const panel = document.getElementById('custom-' + type + '-panel');
+  const chevron = document.getElementById(type + '-chevron');
+  if (!panel) return;
+  const open = panel.style.display !== 'none';
+  panel.style.display = open ? 'none' : 'block';
+  if (chevron) chevron.textContent = open ? '›' : '↓';
+  if (!open) renderCustomizationLists();
+}
+
+function renderCustomizationLists() {
+  renderCatList();
+  renderFormalityList();
+}
+
+function renderCatList() {
+  const list = document.getElementById('custom-cats-list');
+  if (!list) return;
+  list.innerHTML = customCategories.map((cat, idx) => `
+    <div class="custom-list-row" id="cat-row-${idx}"
+      style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--warm);border:1px solid var(--border);margin-bottom:4px;border-radius:1px;position:relative;overflow:hidden;transition:transform 0.2s"
+      ontouchstart="swipeStart(this, 'cat', ${idx})"
+      ontouchmove="swipeMove(event, this)"
+      ontouchend="swipeEnd(event, this, 'cat', ${idx})">
+      <div style="flex:1;font-size:13px;color:var(--ink)">${cat}</div>
+      <button onclick="editCategory(${idx})" style="background:none;border:none;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);cursor:pointer;font-family:Jost,sans-serif">Edit</button>
+      <div class="swipe-delete-bg" style="position:absolute;right:0;top:0;bottom:0;width:80px;background:#8B3A2F;display:flex;align-items:center;justify-content:center;transform:translateX(100%);transition:transform 0.2s">
+        <button onclick="deleteCategory(${idx})" style="background:none;border:none;color:white;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;font-family:Jost,sans-serif;cursor:pointer">Remove</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderFormalityList() {
+  const list = document.getElementById('custom-formality-list');
+  if (!list) return;
+  list.innerHTML = customFormality.map((f, idx) => `
+    <div class="custom-list-row"
+      style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--warm);border:1px solid var(--border);margin-bottom:4px;border-radius:1px;position:relative;overflow:hidden;transition:transform 0.2s"
+      ontouchstart="swipeStart(this, 'formality', ${idx})"
+      ontouchmove="swipeMove(event, this)"
+      ontouchend="swipeEnd(event, this, 'formality', ${idx})">
+      <div style="flex:1;font-size:13px;color:var(--ink)">${f.label}</div>
+      <button onclick="editFormality(${idx})" style="background:none;border:none;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mid);cursor:pointer;font-family:Jost,sans-serif">Edit</button>
+      <div class="swipe-delete-bg" style="position:absolute;right:0;top:0;bottom:0;width:80px;background:#8B3A2F;display:flex;align-items:center;justify-content:center;transform:translateX(100%);transition:transform 0.2s">
+        <button onclick="deleteFormality(${idx})" style="background:none;border:none;color:white;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;font-family:Jost,sans-serif;cursor:pointer">Remove</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// Swipe-to-delete logic
+let swipeStartX = 0;
+let swipeEl = null;
+
+function swipeStart(el, type, idx) {
+  swipeStartX = event.touches[0].clientX;
+  swipeEl = el;
+}
+
+function swipeMove(e, el) {
+  const dx = e.touches[0].clientX - swipeStartX;
+  if (dx < -10) {
+    const bg = el.querySelector('.swipe-delete-bg');
+    const moveX = Math.max(-80, dx);
+    if (bg) bg.style.transform = 'translateX(' + (100 + moveX) + '%)';
+    e.preventDefault();
+  }
+}
+
+function swipeEnd(e, el, type, idx) {
+  const dx = e.changedTouches[0].clientX - swipeStartX;
+  const bg = el.querySelector('.swipe-delete-bg');
+  if (dx < -50) {
+    // Reveal delete button
+    if (bg) bg.style.transform = 'translateX(0%)';
+  } else {
+    // Snap back
+    if (bg) bg.style.transform = 'translateX(100%)';
+  }
+}
+
+function addCustomCategory() {
+  const name = prompt('New category name:');
+  if (!name?.trim()) return;
+  customCategories.push(name.trim());
+  saveData('armoire_custom_cats', customCategories);
+  updateCategoryDropdowns();
+  renderCatList();
+  showToast('Category added');
+}
+
+function editCategory(idx) {
+  const name = prompt('Edit category name:', customCategories[idx]);
+  if (!name?.trim()) return;
+  const oldName = customCategories[idx];
+  customCategories[idx] = name.trim();
+  // Update any items using the old category
+  wardrobe.forEach(item => { if (item.cat === oldName) item.cat = name.trim(); });
+  saveData('armoire_custom_cats', customCategories);
+  persist();
+  updateCategoryDropdowns();
+  renderCatList();
+  renderWardrobe();
+  showToast('Category updated');
+}
+
+function deleteCategory(idx) {
+  const cat = customCategories[idx];
+  const inUse = wardrobe.filter(i => i.cat === cat).length;
+  if (inUse > 0) {
+    showToast(cat + ' is used by ' + inUse + ' items — reassign first');
+    return;
+  }
+  customCategories.splice(idx, 1);
+  saveData('armoire_custom_cats', customCategories);
+  updateCategoryDropdowns();
+  renderCatList();
+  showToast('Category removed');
+}
+
+function addCustomFormality() {
+  const label = prompt('New formality level label:');
+  if (!label?.trim()) return;
+  const val = customFormality.length + 1;
+  customFormality.push({ value: val, label: label.trim() });
+  saveData('armoire_custom_formality', customFormality);
+  updateFormalityDropdowns();
+  renderFormalityList();
+  showToast('Formality level added');
+}
+
+function editFormality(idx) {
+  const label = prompt('Edit formality label:', customFormality[idx].label);
+  if (!label?.trim()) return;
+  customFormality[idx].label = label.trim();
+  saveData('armoire_custom_formality', customFormality);
+  updateFormalityDropdowns();
+  renderFormalityList();
+  showToast('Formality updated');
+}
+
+function deleteFormality(idx) {
+  if (customFormality.length <= 2) { showToast('Need at least 2 formality levels'); return; }
+  customFormality.splice(idx, 1);
+  saveData('armoire_custom_formality', customFormality);
+  updateFormalityDropdowns();
+  renderFormalityList();
+  showToast('Formality level removed');
+}
+
+function updateCategoryDropdowns() {
+  const selects = ['new-cat', 'edit-cat'];
+  selects.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = customCategories.map(cat =>
+      `<option value="${cat}" ${cat === current ? 'selected' : ''}>${cat}</option>`
+    ).join('');
+  });
+}
+
+function updateFormalityDropdowns() {
+  const selects = ['new-formality', 'edit-formality'];
+  selects.forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = customFormality.map(f =>
+      `<option value="${f.value}" ${f.value == current ? 'selected' : ''}>${f.label}</option>`
+    ).join('');
+  });
+}
+
 function toggleOcc(btn) { btn.classList.toggle('active'); }
 
 // ── MODAL ─────────────────────────────────────────────────────────────────────
@@ -2999,6 +3143,7 @@ function openModal(id) {
     if (supabaseClient) showSupabaseStatus('Connected to Supabase ✓', true);
     else if (url && key) showSupabaseStatus('Keys saved — reconnecting...', true);
     if (anthKey) showAnthropicStatus('AI analysis ready ✓', true);
+    renderCustomizationLists();
   }
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
