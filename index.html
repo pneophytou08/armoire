@@ -1052,6 +1052,7 @@ input:focus, select:focus { border-color: var(--gold); }
       <button class="modal-close" onclick="closeModal('modal-outfit-detail')">×</button>
     </div>
     <div class="modal-body" id="outfit-detail-body"></div>
+    <div id="outfit-detail-worn" style="padding:0 20px 12px"></div>
     <div style="padding:0 20px 20px;display:flex;gap:8px">
       <button class="btn-primary" onclick="editCurrentLook()" style="flex:1">Edit Look</button>
     </div>
@@ -1872,26 +1873,46 @@ function getOutfitGrid(outfit, realIdx) {
   const bottomItems = allItems.filter(i => bottomCats.includes(i.cat));
   const count = allItems.length;
   const cols = count <= 4 ? 2 : 3;
+  const hasBottom = bottomItems.length > 0;
+
+  // Each cell fills its grid area completely — no padding, no gaps visible
   const cell = item =>
-    '<div style="background:var(--card);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;aspect-ratio:1">' +
-    (item.img ? '<img src="' + item.img + '" style="width:100%;height:100%;object-fit:cover">' : (CAT_EMOJI[item.cat] || '')) + '</div>';
-  const topRow = topItems.slice(0, cols).map(cell).join('');
-  const bottomRow = bottomItems.slice(0, cols).map(cell).join('');
-  const grid = '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:2px">' + topRow + '</div>' +
-    (bottomRow ? '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);gap:2px">' + bottomRow + '</div>' : '');
-  return '<div onclick="openOutfitDetail(' + realIdx + ')" style="cursor:pointer;display:flex;flex-direction:column;gap:2px;aspect-ratio:3/4;background:var(--warm);padding:6px;overflow:hidden">' + grid + '</div>';
+    '<div style="overflow:hidden;display:flex;align-items:center;justify-content:center;background:var(--warm);font-size:22px;min-height:0">' +
+    (item.img ? '<img src="' + item.img + '" style="width:100%;height:100%;object-fit:cover;display:block">' : (CAT_EMOJI[item.cat] || '')) +
+    '</div>';
+
+  const topCells = topItems.slice(0, cols).map(cell).join('');
+  // Pad top row to fill cols if not enough items
+  const topPad = Array(Math.max(0, cols - topItems.length)).fill('<div style="background:var(--warm)"></div>').join('');
+  const bottomCells = bottomItems.slice(0, cols).map(cell).join('');
+  const bottomPad = Array(Math.max(0, cols - bottomItems.length)).fill('<div style="background:var(--warm)"></div>').join('');
+
+  // Build a single grid that fills the entire card
+  // Use fr rows so both rows split height equally
+  const rows = hasBottom ? 2 : 1;
+  const allCells = (topCells + topPad) + (hasBottom ? (bottomCells + bottomPad) : '');
+  const grid = '<div style="display:grid;grid-template-columns:repeat(' + cols + ',1fr);grid-template-rows:repeat(' + rows + ',1fr);gap:1px;width:100%;height:100%;background:var(--border)">' + allCells + '</div>';
+
+  return '<div onclick="openOutfitDetail(' + realIdx + ')" style="cursor:pointer;width:100%;aspect-ratio:3/4;overflow:hidden;background:var(--warm)">' + grid + '</div>';
 }
 
 function renderLooks(filter) {
   if (filter !== undefined) looksFilter = filter;
 
-  // Sort: worn (by most recent date) first, not-worn last
+  // Sort: not-worn first (top), then worn by most recent date
   savedOutfits.sort((a, b) => {
     const aPast = (a.wornDates||[]).filter(d=>new Date(d+'T12:00:00')<=new Date());
     const bPast = (b.wornDates||[]).filter(d=>new Date(d+'T12:00:00')<=new Date());
-    if (aPast.length && !bPast.length) return -1;
-    if (!aPast.length && bPast.length) return 1;
-    if (aPast.length && bPast.length) return bPast.slice(-1)[0].localeCompare(aPast.slice(-1)[0]);
+    const aWorn = aPast.length > 0 || a.worn;
+    const bWorn = bPast.length > 0 || b.worn;
+    // Not worn goes to TOP
+    if (!aWorn && bWorn) return -1;
+    if (aWorn && !bWorn) return 1;
+    // Both worn — most recent first
+    if (aWorn && bWorn && aPast.length && bPast.length) {
+      return bPast.slice(-1)[0].localeCompare(aPast.slice(-1)[0]);
+    }
+    // Both not worn — future dated first, then undated
     const aFut = (a.wornDates||[]).filter(d=>new Date(d+'T12:00:00')>new Date());
     const bFut = (b.wornDates||[]).filter(d=>new Date(d+'T12:00:00')>new Date());
     if (aFut.length && !bFut.length) return -1;
@@ -1983,6 +2004,15 @@ function openOutfitDetail(idx) {
     ${outfit.seasons?.length ? `<div style="display:flex;gap:4px;flex-wrap:wrap">${outfit.seasons.map(s => `<span style="font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 8px;border:1px solid var(--green);color:var(--green)">${s}</span>`).join('')}</div>` : ''}
   `;
 
+  // Add worn dates summary to detail modal
+  const wornSection = document.getElementById('outfit-detail-worn');
+  if (wornSection && outfit.wornDates?.length) {
+    const past = outfit.wornDates.filter(d => new Date(d + 'T12:00:00') <= new Date());
+    wornSection.innerHTML = past.length
+      ? '<div style="font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--gold);margin-bottom:4px">Worn ' + past.length + '×</div>' +
+        past.map(d => '<div style="font-size:11px;color:var(--mid)">' + new Date(d + 'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) + '</div>').join('')
+      : '';
+  }
   openModal('modal-outfit-detail');
 }
 
