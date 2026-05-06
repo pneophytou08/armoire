@@ -1089,6 +1089,12 @@ input:focus, select:focus { border-color: var(--gold); }
       </div>
       <label>Notes</label>
       <input type="text" id="edit-look-notes" placeholder="e.g. Great for a dinner out...">
+      <label>Log Date Worn</label>
+      <div style="display:flex;gap:6px;margin-bottom:6px">
+        <input type="date" id="edit-worn-date" style="flex:1;font-size:12px;padding:8px 10px;font-family:Jost,sans-serif">
+        <button onclick="addWornDate()" style="padding:8px 14px;background:none;border:1px solid var(--gold);color:var(--gold);font-family:Jost,sans-serif;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;cursor:pointer;border-radius:1px;white-space:nowrap">+ Log</button>
+      </div>
+      <div id="worn-dates-list" style="margin-bottom:12px"></div>
       <label>Outfit photo (optional)</label>
       <img id="edit-look-photo-preview" class="upload-preview" alt="Preview">
       <div class="upload-area">
